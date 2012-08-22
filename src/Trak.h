@@ -18,8 +18,8 @@ class Trak {
         Trak(int mode = 0, int size = 16);
         
         // accessors
-        void set_current(vector<Step> phr);
-        void set_current(vector<Step> phr, int mode);
+        void set_vanilla(vector<Step> phr);
+        void set_vanilla(vector<Step> phr, int mode);
         // current
         vector<Step>* get_current(); 
         vector<Step> get_current_copy();
@@ -35,14 +35,17 @@ class Trak {
         
         // utilities
         static vector<Step> str_to_phr(string str);
+        static string phr_to_str(vector<Step> *phr);
         static void dump_vel(vector<Step> *phr);
         static vector<unsigned char> get_steps2bytes(vector<Step> *phr);
         static vector<int> get_bytes2ints(vector<unsigned char> bytes);
         static void swing_phr(vector<Step> *phr, float swing);
+        static vector<int> get_jaccard_variation(vector<Step> *phr, float thres);
+    
         // jaccard
-        static float get_wjaccard(string s1, string s2);
+        static float wjaccard(string s1, string s2);
         // normal rand
-        static float get_normal(float mean, float stdev);
+        static float normal(float mean, float stdev);
     
         
         // analysis tools

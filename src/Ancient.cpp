@@ -18,15 +18,22 @@ Ancient::Ancient()
     for(int i = 0; i < 8 ; i++)
     {
         Trak tr;
-        tr.set_current(Trak::str_to_phr("0000000000000000"));
+        tr.set_vanilla(Trak::str_to_phr("0000000000000000"));
         m_tracks.push_back(tr);
     }
     
     // test set
-    m_tracks[0].set_current(Trak::str_to_phr("f000f000f000f000"),Trak::MODE_LOW_PERC);
-    m_tracks[1].set_current(Trak::str_to_phr("00000f000f000060"),Trak::MODE_SNARE);
-    m_tracks[3].set_current(Trak::str_to_phr("00f000f000f000f0"),Trak::MODE_OVERHEAD);
-    m_tracks[4].set_current(Trak::str_to_phr("6989698969896989"),Trak::MODE_OVERHEAD);
+    m_tracks[0].set_vanilla(Trak::str_to_phr("f000f000f000f000"),Trak::MODE_LOW_PERC);
+    m_tracks[1].set_vanilla(Trak::str_to_phr("00000f000f000060"),Trak::MODE_SNARE);
+    m_tracks[3].set_vanilla(Trak::str_to_phr("00f000f000f000f0"),Trak::MODE_OVERHEAD);
+    m_tracks[4].set_vanilla(Trak::str_to_phr("6989698969896989"),Trak::MODE_OVERHEAD);
+    
+    // test
+    /*for (int i = 0; i < 3000; i++)
+    {
+        ofLog(OF_LOG_NOTICE, ofToString(Trak::get_normal(10.,1.)) );
+    }*/
+    
     
     // pitch map stuff
     static const int arr[] = {36,// kick

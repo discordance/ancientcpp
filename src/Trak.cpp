@@ -36,13 +36,13 @@ Trak::Trak(int mode, int size){
 }
 
 // accessors
-void Trak::set_current(vector<Step> phr)
+void Trak::set_vanilla(vector<Step> phr)
 {
     m_vanilla = phr;
     set_size(phr.size());
 }
 
-void Trak::set_current(vector<Step> phr, int mode = -1)
+void Trak::set_vanilla(vector<Step> phr, int mode = -1)
 {
     m_vanilla = phr;
     set_size(phr.size());
@@ -173,6 +173,21 @@ void Trak::dump_vanilla_vel()
 
 //static utilities
 //--------------------------------------------------------------
+string Trak::phr_to_str(vector<Step> *phr)
+{
+    string res;
+    vector<Step>::iterator step;
+    for(step = phr->begin(); step != phr->end(); step ++)
+    {
+        string a;
+        std::stringstream ss1;
+        ss1 << std::hex << step->vel;
+        ss1 >> a;
+        res += a;
+    }
+    return res;
+}
+
 vector<Step> Trak::str_to_phr(string str)
 {
     vector<Step> res;
@@ -219,6 +234,67 @@ void Trak::swing_phr(vector<Step> *phr, float swing)
         }
     }    
 }
+
+vector<int> Trak::get_jaccard_variation(vector<Step> *phr, float thres)
+{
+    thres = ofClamp(thres, 0.97, 0.99);
+    string goal;
+    string target = phr_to_str(phr);
+    
+    for(int i; i < target.length(); i += 4)
+    {
+        //int to = 4,target.length()-i;
+        string part = target.substr(i);
+    }
+}
+
+// gaussian random
+float Trak::normal(float mean, float stdev)
+{
+    float rnd = (ofRandom(1) * 2 - 1) + (ofRandom(1) * 2 - 1) + (ofRandom(1) * 2 - 1);
+    return rnd * stdev + mean;
+}
+
+// weighted jaccard
+float Trak::wjaccard(string s1, string s2)
+{
+    int l1, l2;
+    l1 = s1.length();
+    l2 = s2.length();
+    int ct = 0;
+    float  a = 0, b = 0 , same = 0, diff = 0 ;
+    /* strings must be of equal size and non-zero length */
+    if (l1 == 0 || l1 != l2) {
+        return (-1.0);
+    }
+    if(s1.compare(s2) == 0)
+    {
+        return 0.;
+    }
+    while (ct != l1) {
+        
+        if (s1.at(ct) == s2.at(ct)) {
+            same++;
+        } else {
+            int aa,bb;
+            std::stringstream ss1, ss2;
+            ss1 << std::hex << s1.at(ct);
+            ss1 >> aa;
+       
+            ss2 << std::hex << s2.at(ct);
+            ss2 >> bb;
+            
+            a = pow((float)aa,2);
+            b = pow((float)bb,2);
+            diff += abs(a-b);
+            
+        }
+        ct++;
+    }
+    return (1 - (same / (diff + same)));
+}
+
+
 
 // byte array to vector of int
 vector<int> Trak::get_bytes2ints(vector<unsigned char> bytes)

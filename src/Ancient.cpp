@@ -26,7 +26,7 @@ Ancient::Ancient()
     m_tracks[0].set_current(Trak::str_to_phr("f000f000f000f000"),Trak::MODE_LOW_PERC);
     m_tracks[1].set_current(Trak::str_to_phr("00000f000f000060"),Trak::MODE_SNARE);
     m_tracks[3].set_current(Trak::str_to_phr("00f000f000f000f0"),Trak::MODE_OVERHEAD);
-   // m_tracks[4].set_current(Trak::str_to_phr("6989698969896989"),Trak::MODE_OVERHEAD);
+    m_tracks[4].set_current(Trak::str_to_phr("6989698969896989"),Trak::MODE_OVERHEAD);
     
     // pitch map stuff
     static const int arr[] = {36,// kick

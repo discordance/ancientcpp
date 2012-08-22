@@ -91,7 +91,14 @@ void Trak::set_xor_variation(float ratio, bool mode)
         // cannot do partial var on 4 squav phrases
         if(m_vanilla.size() <= 4){ mode = 1;}
         
-        //we take the quarter of a measure
+        // we take the quarter of the phrase
+        int vlengh = ofNextPow2(m_vanilla.size()/4)/2;
+        // we roll a dice to make a start or ending var
+        int voffset = 0;
+        if(ofRandom(0, 2) > 1)
+        {
+            int voffset = (m_vanilla.size()/2) - vlengh;
+        }    
         
         unsigned char rate = (unsigned char)ofMap(ratio, 0, 1, 0, 255); // ok valid
         vector<unsigned char> cbytes = Trak::get_steps2bytes(&m_vanilla);
@@ -110,8 +117,12 @@ void Trak::set_xor_variation(float ratio, bool mode)
             }
             else // partial mode
             {
-                
+                if(ct >= voffset && ct <= voffset+vlengh)
+                {
+                    tbyte = tbyte ^ varbyte;
+                }
             }
+              
             rbytes.push_back(tbyte);
         }
         
@@ -124,7 +135,6 @@ void Trak::set_xor_variation(float ratio, bool mode)
             Step *vstep = &m_vanilla.at(vel - res_vels.begin());
       
             cstep->vel = max(*vel,vstep->vel); // we take the max
-            
         }
     }
     else
@@ -303,16 +313,16 @@ float Trak::get_variation_rate()
 {
     switch (m_mode) {
         case MODE_LOW_PERC:
-            return 0.1;
+            return 0.15;
             break;
         case MODE_PERC:
-            return 0.3;
+            return 0.45;
             break; 
         case MODE_SNARE:
-            return 0.25;
+            return 0.35;
             break; 
         case MODE_OVERHEAD:
-            return 0.35;
+            return 0.65;
             break;
         case MODE_FREE_MIND:
             return 0.45;

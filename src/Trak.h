@@ -39,6 +39,11 @@ class Trak {
         static vector<unsigned char> get_steps2bytes(vector<Step> *phr);
         static vector<int> get_bytes2ints(vector<unsigned char> bytes);
         static void swing_phr(vector<Step> *phr, float swing);
+        // jaccard
+        static float get_wjaccard(string s1, string s2);
+        // normal rand
+        static float get_normal(float mean, float stdev);
+    
         
         // analysis tools
         static float get_density_ratio(vector<Step> *phr); // >1 dense >0 not dense

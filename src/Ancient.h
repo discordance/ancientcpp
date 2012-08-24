@@ -21,9 +21,11 @@ class Ancient
         Ancient();
         void set_seq(Seq *seq);
         void set_swing(float swg);
-        void set_xor_variation(float var);
+        void set_xor_variation(float ratio);
         void set_xor_mode(bool mode);
+        void set_jaccard_variation(float thres);
         void assign_pitchmap(vector<int> pitchmap);
+        vector<Trak>* get_tracks();
     
     protected:
         vector<Trak> m_tracks;
@@ -31,6 +33,7 @@ class Ancient
         float m_swing;
         float m_xor_variation;
         bool  m_xor_mode;
+        float m_jacc_variation;
     
 };
 #endif

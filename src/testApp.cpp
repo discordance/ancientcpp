@@ -4,36 +4,98 @@
 void testApp::setup()
 {
     // init framerate
-    ofSetFrameRate(60);
+    ofSetFrameRate(30);
     m_ancient.set_seq(&m_seq);
     m_view_bpm = 120;
     m_view_midi_delay = 4;
     m_view_swing = 0.;
     m_view_xor_mode = false;
+    m_view_xor_variation =0.;    
+    m_view_jacc_variation = 0.;
     
     // INTERFACE
     float xInit = OFX_UI_GLOBAL_WIDGET_SPACING;
     float length = 190-xInit; 
     float dim = 6;
+    ofxUIWidget *w;
     
     gui_g = new ofxUICanvas(0, 0, length+xInit, ofGetHeight());
     gui_g->addWidgetDown(new ofxUILabel("ANCIENT SEQ :::::::", OFX_UI_FONT_LARGE));  
     gui_g->addWidgetDown(new ofxUISpacer(length-xInit, 1));
     gui_g->addWidgetDown(new ofxUILabel("GLOBAL ..........................", OFX_UI_FONT_MEDIUM));
     gui_g->addWidgetDown(new ofxUISpacer(length-xInit, 1)); 
-    gui_g->addWidgetDown(new ofxUISlider(length-xInit,dim, -24, +24, m_view_midi_delay, "live_midi_delay")); 
+    w = gui_g->addWidgetDown(new ofxUISlider(length-xInit,dim, -24, +24, m_view_midi_delay, "live_midi_delay")); 
+    w->setColorBack(ofColor(255,128,0,128));
     gui_g->addWidgetDown(new ofxUISpacer(48-xInit, 1)); 
-    gui_g->addWidgetDown(new ofxUISlider(length-xInit,dim, -0.99, 0.99, m_view_swing, "swing")); 
+    w = gui_g->addWidgetDown(new ofxUISlider(length-xInit,dim, -0.99, 0.99, m_view_swing, "swing")); 
+    w->setColorBack(ofColor(255,128,0,128));
     gui_g->addWidgetDown(new ofxUILabel("XOR VARIATOR ...........", OFX_UI_FONT_MEDIUM));
     gui_g->addWidgetDown(new ofxUISpacer(length-xInit, 1)); 
-    gui_g->addWidgetDown(new ofxUISlider(length-xInit,dim*2, 0., 1., m_view_xor_variation, "xor_variation")); 
+    w = gui_g->addWidgetDown(new ofxUISlider(length-xInit,dim*2, 0., 1., m_view_xor_variation, "xor_variation"));  
+    w->setColorBack(ofColor(255,128,0,128));
+    
     // XOR var modes
     vector<string> xor_modes; 
 	xor_modes.push_back("part");
 	xor_modes.push_back("full");
     ofxUIRadio *xor_modes_gui = (ofxUIRadio *)gui_g->addWidgetDown(new ofxUIRadio( dim*2, dim*2, "xor_mode", xor_modes, OFX_UI_ORIENTATION_HORIZONTAL)); 
+    xor_modes_gui->setColorBack(ofColor(255,128,0));
     xor_modes_gui->activateToggle(xor_modes[0]);
+    gui_g->addWidgetDown(new ofxUILabel("JAC VARIATOR ...........", OFX_UI_FONT_MEDIUM));
+    gui_g->addWidgetDown(new ofxUISpacer(length-xInit, 1));
+    w = gui_g->addWidgetDown(new ofxUIButton(dim*4, dim*4, false, "smooth_variation"));  
+    w->setColorBack(ofColor(255,128,0));
+    w = gui_g->addWidgetDown(new ofxUIButton(dim*4, dim*4, false, "hard_variation")); 
+    w->setColorBack(ofColor(255,128,0));
+    w = gui_g->addWidgetDown(new ofxUIButton(dim*4, dim*4, false, "vanilla")); 
+    w->setColorBack(ofColor(255,128,0));
+    
     ofAddListener(gui_g->newGUIEvent,this,&testApp::gui_gEvent);
+    
+    // widgets d
+    gui_d = new ofxUICanvas(ofGetWidth() - (length+xInit), 0, length+xInit, ofGetHeight());
+    gui_d->addWidgetDown(new ofxUISpacer(length-xInit, 1));
+    gui_d->addWidgetDown(new ofxUILabel("GROOVE ..........................", OFX_UI_FONT_MEDIUM));
+    
+    int tr_height = 80;
+    int tr_width = (ofGetWidth() - ((length+xInit)*2))- xInit*2;
+    int h_offset = 20;
+    int ct = 0;
+    // tracks
+    
+    for(int i = 0 ; i < 8 ; ++i)
+    {
+        //ofPtr<ofxUICanvas> ptr(new ofxUICanvas(length+(xInit*2), (tr_height*i)+10, tr_width, tr_height));
+       ofxUICanvas * ptr = new ofxUICanvas(length+(xInit*2), ((tr_height+10)*i)+h_offset, tr_width, tr_height);
+       vector<ofxUISlider*> sliders;
+        
+       for(int j = 0 ; j < 32 ; ++j)
+       {
+           ofxUISlider *w;
+           if(j< 1)
+           {
+              w = (ofxUISlider*)ptr->addWidgetDown(new ofxUISlider(dim*1.5,tr_height*0.8, 0., 1., 0., ""));  
+           }
+           else
+           {
+              w = (ofxUISlider*)ptr->addWidgetRight(new ofxUISlider(dim*1.5,tr_height*0.8, 0., 1., 0., "")); 
+           }
+           if(j % 4 == 0)
+           {
+               w->setColorBack(ofColor(255,128,0,192));
+           }
+           else
+           {
+               w->setColorBack(ofColor(255,128,0,48));
+           }
+           sliders.push_back(w);
+           ct++;
+       }
+       gui_sliders.push_back(sliders); 
+       ptr->addWidgetRight(new ofxUISpacer(1, tr_height*0.8));
+
+    }
+    
     
 }
 
@@ -70,24 +132,66 @@ void testApp::gui_gEvent(ofxUIEventArgs &e)
         m_view_xor_mode = true;
         m_ancient.set_xor_mode(m_view_xor_mode);
     }
-    
-}
-
-//--------------------------------------------------------------
-void testApp::update()
-{
-    if(ofGetFrameNum() % 12 == 0) // refresh slower
+    else if(name == "smooth_variation")
     {
-        m_view_bpm = m_seq.get_bpm();
+        ofxUIButton *butt = (ofxUIButton *) e.widget;
+        bool val = butt->getValue(); 
+        m_ancient.set_jaccard_variation(0.979);
+    }
+    else if(name == "hard_variation")
+    {
+        ofxUIButton *butt = (ofxUIButton *) e.widget;
+        bool val = butt->getValue(); 
+        m_ancient.set_jaccard_variation(0.99);
+    }
+    else if(name == "vanilla")
+    {
+        ofxUIButton *butt = (ofxUIButton *) e.widget;
+        bool val = butt->getValue(); 
+        m_ancient.set_jaccard_variation(0);
     }
     
     
 }
 
 //--------------------------------------------------------------
+void testApp::update()
+{
+    if(ofGetFrameNum() % 8 == 0) // refresh slower
+    {
+        m_view_bpm = m_seq.get_bpm();
+        update_sliders();
+    }
+    
+}
+
+void testApp::update_sliders()
+{
+    vector<Trak> * tracks = m_ancient.get_tracks();
+    std::vector<Trak>::iterator track;
+    for(track = tracks->begin(); track != tracks->end(); ++track) 
+    {
+        int cta = track - tracks->begin();
+        vector<Step> * steps;
+        steps = track->get_current();
+        std::vector<Step>::iterator step;
+        for(step = steps->begin(); step != steps->end(); ++step) 
+        {
+            
+            int ctb = step - steps->begin();
+            vector<ofxUISlider* > * sliders = &gui_sliders.at(cta);
+            ofxUISlider* slider = sliders->at(ctb);
+            slider->setValue(ofMap(step->vel, 0, 15, 0., 1.));
+            
+        }
+    }
+}
+
+//--------------------------------------------------------------
 void testApp::exit()
 {
     // cleanup
+    m_seq.exit();
 }
 
 //--------------------------------------------------------------

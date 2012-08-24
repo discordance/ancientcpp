@@ -29,14 +29,21 @@ class testApp : public ofBaseApp{
         Ancient m_ancient;
     
         // interface
-        ofxUICanvas *gui_g;   	
+        ofxUICanvas *gui_g; // left gui  
+        ofxUICanvas *gui_d; // left gui  
+        vector< vector<ofxUISlider *> > gui_sliders;
         void gui_gEvent(ofxUIEventArgs &e);
         bool drawPadding; 
     
     protected:
+    
+        // 
+        void update_sliders();    
+    
         float m_view_bpm;
         int   m_view_midi_delay;
         float m_view_swing;
         float m_view_xor_variation;
         bool  m_view_xor_mode;
+        float m_view_jacc_variation;
 };

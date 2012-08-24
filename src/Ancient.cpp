@@ -18,16 +18,26 @@ Ancient::Ancient()
     for(int i = 0; i < 8 ; i++)
     {
         Trak tr;
-        tr.set_vanilla(Trak::str_to_phr("0000000000000000"));
+        tr.set_vanilla(Trak::str_to_phr("00000000000000000000000000000000"));
         m_tracks.push_back(tr);
     }
     
     // test set
-    m_tracks[0].set_vanilla(Trak::str_to_phr("f000f000f000f000"),Trak::MODE_LOW_PERC);
-    m_tracks[1].set_vanilla(Trak::str_to_phr("00000f000f000060"),Trak::MODE_SNARE);
-    m_tracks[3].set_vanilla(Trak::str_to_phr("00f000f000f000f0"),Trak::MODE_OVERHEAD);
-    m_tracks[4].set_vanilla(Trak::str_to_phr("6989698969896989"),Trak::MODE_OVERHEAD);
     
+    m_tracks[0].set_vanilla(Trak::str_to_phr("f000f000f00f0000f000f000f00f0000"),Trak::MODE_LOW_PERC);
+    m_tracks[1].set_vanilla(Trak::str_to_phr("05000f000f00006000000f000f000060"),Trak::MODE_SNARE);
+    m_tracks[3].set_vanilla(Trak::str_to_phr("00f000f6 00f000f000f000f000f000f"),Trak::MODE_OVERHEAD);
+    m_tracks[4].set_vanilla(Trak::str_to_phr("69896989698969896989698969896989"),Trak::MODE_OVERHEAD);
+    
+    
+    
+    //ofLog(OF_LOG_NOTICE, ofToString(Trak::get_jaccard_variation(m_tracks[0].get_current(),0.98).size()));
+    //int st = ofGetElapsedTimeMicros();
+    //for (int i = 0; i < 1; i++)
+    //{
+    //      Trak::get_jaccard_variation(m_tracks[3].get_current(),0.99);
+    //}
+   // ofLog(OF_LOG_NOTICE, "time: "+ofToString(ofGetElapsedTimeMicros() - st));
     // test
     /*for (int i = 0; i < 3000; i++)
     {
@@ -50,6 +60,10 @@ Ancient::Ancient()
     
 }
 
+vector<Trak>* Ancient::get_tracks()
+{
+    return &m_tracks;
+}
 
 void Ancient::set_xor_mode(bool mode)
 {
@@ -63,9 +77,21 @@ void Ancient::set_xor_mode(bool mode)
     m_seq->update_drum_tracks(&m_tracks);
 }
 
-void Ancient::set_xor_variation(float var)
+void Ancient::set_jaccard_variation(float thres)
 {
-    m_xor_variation = var;
+    m_jacc_variation = thres;
+    // update variation for all tracks
+    std::vector<Trak>::iterator track;
+    for(track = m_tracks.begin(); track != m_tracks.end(); ++track) 
+    {
+        track->set_jaccard_variation(m_jacc_variation);
+    }
+    m_seq->update_drum_tracks(&m_tracks);
+} 
+
+void Ancient::set_xor_variation(float ratio)
+{
+    m_xor_variation = ratio;
     // update variation for all tracks
     std::vector<Trak>::iterator track;
     for(track = m_tracks.begin(); track != m_tracks.end(); ++track) 

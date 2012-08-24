@@ -52,6 +52,20 @@ void Trak::set_vanilla(vector<Step> phr, int mode = -1)
     }
 }
 
+bool Trak::has_events()
+{
+    vector<Step>::iterator step;
+    // iterate
+    for(step = m_vanilla.begin(); step != m_vanilla.end(); ++step)
+    {
+        if(step->vel)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 vector<Step>* Trak::get_current()
 {
     return &m_current;
@@ -79,6 +93,30 @@ void Trak::set_size(int size)
     update_size();
 }
 
+void Trak::set_jaccard_variation(float thres)
+{
+    if(!has_events())
+    {
+        return;
+    }
+    if(thres > 0.)
+    {
+        vector<int> vari = get_jaccard_variation(&m_vanilla, thres);
+        vector<int>::iterator vel;
+        // iterate
+        for(vel = vari.begin(); vel != vari.end(); ++vel)
+        {
+            Step *step = &m_current.at(vel - vari.begin());
+            step->vel = *vel;
+        }
+    }
+    else
+    {
+        // reset vanilla
+        m_current = m_vanilla;
+    }
+}
+
 /**
  * XOR Variation with a bit of Random
  * No on Vanilla
@@ -86,6 +124,10 @@ void Trak::set_size(int size)
  */
 void Trak::set_xor_variation(float ratio, bool mode)
 {
+    if(!has_events())
+    {
+        return;
+    }
     if(ratio > 0)
     {
         // cannot do partial var on 4 squav phrases
@@ -177,13 +219,44 @@ string Trak::phr_to_str(vector<Step> *phr)
 {
     string res;
     vector<Step>::iterator step;
-    for(step = phr->begin(); step != phr->end(); step ++)
+    for(step = phr->begin(); step != phr->end(); ++step)
     {
         string a;
         std::stringstream ss1;
         ss1 << std::hex << step->vel;
         ss1 >> a;
         res += a;
+    }
+    return res;
+}
+string Trak::vel_to_str(vector<int> ins)
+{
+    string res;
+    vector<int>::iterator num;
+    for(num = ins.begin(); num != ins.end(); ++num)
+    {
+        string a;
+        std::stringstream ss1;
+        ss1 << std::hex << *num;
+        ss1 >> a;
+        res += a;
+    }
+    return res;
+}    
+
+vector<int> Trak::str_to_vel(string str)
+{
+    vector<int> res;
+    string::iterator str_iter;
+    for(str_iter = str.begin(); str_iter != str.end(); str_iter++)
+    {
+        // cast hex str to int
+        int x;   
+        std::stringstream ss;
+        ss << std::hex << *str_iter;
+        ss >> x;
+        
+        res.push_back(x);
     }
     return res;
 }
@@ -237,15 +310,36 @@ void Trak::swing_phr(vector<Step> *phr, float swing)
 
 vector<int> Trak::get_jaccard_variation(vector<Step> *phr, float thres)
 {
+    
     thres = ofClamp(thres, 0.97, 0.99);
     string goal;
     string target = phr_to_str(phr);
+    int inc = 4;
     
-    for(int i; i < target.length(); i += 4)
+    for(int i = 0; i < target.length(); i += inc)
     {
-        //int to = 4,target.length()-i;
-        string part = target.substr(i);
+        int to = (inc > target.length()-i)? target.length()-i : inc;
+        to += i;
+        string part = target.substr(i,to-i);
+        string res;
+        float score = 1;
+
+        while (score > thres) {
+            vector<int> rnd;
+            for(int j = i; j < to; ++j)
+            {
+                //ofLog(OF_LOG_NOTICE, ofToString(j) + " " + ofToString(i) + " " + ofToString(to));
+                int rvel = ofClamp(Trak::normal( phr->at(j).vel, 12.),0,15);
+                rnd.push_back(rvel);
+            }
+            res = Trak::vel_to_str(rnd);
+            score = Trak::wjaccard(part, res);
+            //ofLog(OF_LOG_NOTICE, "res " + res + " part " + part + " score " + ofToString(score));
+        }
+        goal += res;
     }
+   // ofLog(OF_LOG_NOTICE, goal);
+    return Trak::str_to_vel(goal);
 }
 
 // gaussian random

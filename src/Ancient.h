@@ -13,7 +13,7 @@
 #include "Trak.h"
 #include "Seq.h"
 
-class Ancient 
+class Ancient : public ofThread
 {
     
     
@@ -34,6 +34,12 @@ class Ancient
         float m_xor_variation;
         bool  m_xor_mode;
         float m_jacc_variation;
+        
+        // queue handling
+        vector<string> m_tasks;
+        
+        // thread
+        void threadedFunction();
     
 };
 #endif

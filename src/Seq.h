@@ -16,7 +16,8 @@
 
 using namespace std;
 
-class Seq : public ofxMidiListener, public ofThread{
+class Seq : public ofxMidiListener, public ofThread
+{
     
     public:
         Seq();

@@ -63,22 +63,22 @@ void testApp::setup()
     int ct = 0;
     // tracks
     
-    for(int i = 0 ; i < 8 ; ++i)
+    for(int i = 0 ; i < 1 ; ++i)
     {
         //ofPtr<ofxUICanvas> ptr(new ofxUICanvas(length+(xInit*2), (tr_height*i)+10, tr_width, tr_height));
        ofxUICanvas * ptr = new ofxUICanvas(length+(xInit*2), ((tr_height+10)*i)+h_offset, tr_width, tr_height);
        vector<ofxUISlider*> sliders;
         
-       for(int j = 0 ; j < 32 ; ++j)
+       for(int j = 0 ; j < 16 ; ++j)
        {
            ofxUISlider *w;
            if(j< 1)
            {
-              w = (ofxUISlider*)ptr->addWidgetDown(new ofxUISlider(dim*1.5,tr_height*0.8, 0., 1., 0., ""));  
+              w = (ofxUISlider*)ptr->addWidgetDown(new ofxUISlider(dim*3,tr_height*0.8, 0., 1., 0., ""));  
            }
            else
            {
-              w = (ofxUISlider*)ptr->addWidgetRight(new ofxUISlider(dim*1.5,tr_height*0.8, 0., 1., 0., "")); 
+              w = (ofxUISlider*)ptr->addWidgetRight(new ofxUISlider(dim*3,tr_height*0.8, 0., 1., 0., "")); 
            }
            if(j % 4 == 0)
            {
@@ -160,7 +160,7 @@ void testApp::update()
     if(ofGetFrameNum() % 8 == 0) // refresh slower
     {
         m_view_bpm = m_seq.get_bpm();
-        update_sliders();
+       // update_sliders();
     }
     
 }

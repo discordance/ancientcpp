@@ -29,22 +29,6 @@ Ancient::Ancient()
     m_tracks[3].set_vanilla(Trak::str_to_phr("00f000f6 00f000f000f000f000f000f"),Trak::MODE_OVERHEAD);
     m_tracks[4].set_vanilla(Trak::str_to_phr("69896989698969896989698969896989"),Trak::MODE_OVERHEAD);
     
-    
-    
-    //ofLog(OF_LOG_NOTICE, ofToString(Trak::get_jaccard_variation(m_tracks[0].get_current(),0.98).size()));
-    //int st = ofGetElapsedTimeMicros();
-    //for (int i = 0; i < 1; i++)
-    //{
-    //      Trak::get_jaccard_variation(m_tracks[3].get_current(),0.99);
-    //}
-   // ofLog(OF_LOG_NOTICE, "time: "+ofToString(ofGetElapsedTimeMicros() - st));
-    // test
-    /*for (int i = 0; i < 3000; i++)
-    {
-        ofLog(OF_LOG_NOTICE, ofToString(Trak::get_normal(10.,1.)) );
-    }*/
-    
-    
     // pitch map stuff
     static const int arr[] = {36,// kick
                               38,// snare1
@@ -68,50 +52,29 @@ vector<Trak>* Ancient::get_tracks()
 void Ancient::set_xor_mode(bool mode)
 {
     m_xor_mode = mode;
-    // update variation for all tracks
-    std::vector<Trak>::iterator track;
-    for(track = m_tracks.begin(); track != m_tracks.end(); ++track) 
-    {
-        track->set_xor_variation(m_xor_variation, m_xor_mode);
-    }
-    m_seq->update_drum_tracks(&m_tracks);
+    m_tasks.push_back("xor_var");
+    startThread(); // threaded calculus
 }
 
 void Ancient::set_jaccard_variation(float thres)
 {
     m_jacc_variation = thres;
-    // update variation for all tracks
-    std::vector<Trak>::iterator track;
-    for(track = m_tracks.begin(); track != m_tracks.end(); ++track) 
-    {
-        track->set_jaccard_variation(m_jacc_variation);
-    }
-    m_seq->update_drum_tracks(&m_tracks);
+    m_tasks.push_back("gauss_var");
+    startThread();
 } 
 
 void Ancient::set_xor_variation(float ratio)
 {
     m_xor_variation = ratio;
-    // update variation for all tracks
-    std::vector<Trak>::iterator track;
-    for(track = m_tracks.begin(); track != m_tracks.end(); ++track) 
-    {
-        track->set_xor_variation(m_xor_variation, m_xor_mode);
-    }
-    m_seq->update_drum_tracks(&m_tracks);
+    m_tasks.push_back("xor_var");
+    startThread();
 }
 
 void Ancient::set_swing(float swg)
 {
     m_swing = swg;
-    
-    // update swing for all tracks
-    std::vector<Trak>::iterator track;
-    for(track = m_tracks.begin(); track != m_tracks.end(); ++track) 
-    {
-        track->set_swing(swg);
-    }
-    m_seq->update_drum_tracks(&m_tracks);
+    m_tasks.push_back("swing");
+    startThread();
 }
 
 void Ancient::set_seq(Seq *seq)
@@ -136,3 +99,40 @@ void Ancient::assign_pitchmap(vector<int> pitchmap)
         }
     }   
 }
+
+//--------------------------
+void Ancient::threadedFunction()
+{
+    while( isThreadRunning() != 0 && m_tasks.size() != 0)
+    {
+        if( lock() )
+        {
+            string task = m_tasks[0];
+            m_tasks.erase(m_tasks.begin());
+            
+            // update variation for all tracks
+            std::vector<Trak>::iterator track;
+            for(track = m_tracks.begin(); track != m_tracks.end(); ++track) 
+            {
+                if(task == "gauss_var")
+                {    
+                    track->set_jaccard_variation(m_jacc_variation);
+                }
+                else if(task == "xor_var")
+                {
+                    track->set_xor_variation(m_xor_variation, m_xor_mode);
+                }
+                else if(task == "swing")
+                {
+                    track->set_swing(m_swing);
+                }
+            }
+            
+            unlock();
+        }
+    } 
+    
+    m_seq->update_drum_tracks(&m_tracks);
+    stopThread();
+}
+    

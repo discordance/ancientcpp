@@ -22,6 +22,8 @@ void testApp::setup()
     gui_g = new ofxUICanvas(0, 0, length+xInit, ofGetHeight());
     gui_g->addWidgetDown(new ofxUILabel("ANCIENT SEQ :::::::", OFX_UI_FONT_LARGE));  
     gui_g->addWidgetDown(new ofxUISpacer(length-xInit, 1));
+    gui_g->addWidgetDown(new ofxUILabel("TRANSPORT .................", OFX_UI_FONT_MEDIUM));
+    gui_g->addWidgetDown(new ofxUISpacer(length-xInit, 1));
     gui_g->addWidgetDown(new ofxUILabel("GLOBAL ..........................", OFX_UI_FONT_MEDIUM));
     gui_g->addWidgetDown(new ofxUISpacer(length-xInit, 1)); 
     w = gui_g->addWidgetDown(new ofxUISlider(length-xInit,dim, -24, +24, m_view_midi_delay, "live_midi_delay")); 
@@ -39,14 +41,16 @@ void testApp::setup()
 	xor_modes.push_back("part");
 	xor_modes.push_back("full");
     ofxUIRadio *xor_modes_gui = (ofxUIRadio *)gui_g->addWidgetDown(new ofxUIRadio( dim*2, dim*2, "xor_mode", xor_modes, OFX_UI_ORIENTATION_HORIZONTAL)); 
-    xor_modes_gui->setColorBack(ofColor(255,128,0));
+    vector<ofxUIToggle *> tggls = xor_modes_gui->getToggles();
+    tggls.at(0)->setColorBack(ofColor(255,128,0,128));
+    tggls.at(1)->setColorBack(ofColor(255,128,0,128));
     xor_modes_gui->activateToggle(xor_modes[0]);
     gui_g->addWidgetDown(new ofxUILabel("JAC VARIATOR ...........", OFX_UI_FONT_MEDIUM));
     gui_g->addWidgetDown(new ofxUISpacer(length-xInit, 1));
     w = gui_g->addWidgetDown(new ofxUIButton(dim*4, dim*4, false, "smooth_variation"));  
-    w->setColorBack(ofColor(255,128,0));
+    w->setColorBack(ofColor(255,128,0,128));
     w = gui_g->addWidgetDown(new ofxUIButton(dim*4, dim*4, false, "hard_variation")); 
-    w->setColorBack(ofColor(255,128,0));
+    w->setColorBack(ofColor(255,128,0,128));
     w = gui_g->addWidgetDown(new ofxUIButton(dim*4, dim*4, false, "vanilla")); 
     w->setColorBack(ofColor(255,128,0));
     
@@ -62,7 +66,7 @@ void testApp::setup()
     int h_offset = 20;
     int ct = 0;
     // tracks
-    
+    /*
     for(int i = 0 ; i < 1 ; ++i)
     {
         //ofPtr<ofxUICanvas> ptr(new ofxUICanvas(length+(xInit*2), (tr_height*i)+10, tr_width, tr_height));
@@ -95,7 +99,7 @@ void testApp::setup()
        ptr->addWidgetRight(new ofxUISpacer(1, tr_height*0.8));
 
     }
-    
+    */
     
 }
 
@@ -135,19 +139,22 @@ void testApp::gui_gEvent(ofxUIEventArgs &e)
     else if(name == "smooth_variation")
     {
         ofxUIButton *butt = (ofxUIButton *) e.widget;
-        bool val = butt->getValue(); 
-        m_ancient.set_jaccard_variation(0.979);
+        bool val = butt->getValue();
+        m_view_jacc_variation = 0.978;
+        m_ancient.set_jaccard_variation(m_view_jacc_variation);
     }
     else if(name == "hard_variation")
     {
         ofxUIButton *butt = (ofxUIButton *) e.widget;
         bool val = butt->getValue(); 
-        m_ancient.set_jaccard_variation(0.99);
+        m_view_jacc_variation = 0.99;
+        m_ancient.set_jaccard_variation(m_view_jacc_variation);
     }
     else if(name == "vanilla")
     {
         ofxUIButton *butt = (ofxUIButton *) e.widget;
         bool val = butt->getValue(); 
+        m_view_jacc_variation = 0;
         m_ancient.set_jaccard_variation(0);
     }
     

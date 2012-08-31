@@ -22,41 +22,61 @@ class Trak {
         void set_vanilla(vector<Step> phr, int mode);
         bool has_events();
         
-        // current
+        // current accessors
         vector<Step>* get_current(); 
-        vector<Step> get_current_copy();
+        vector<int>   get_current_vel();
+        vector<Step>  get_current_copy();
     
         void set_size(int size);
         void set_swing(float swg);
         void set_xor_variation(float ratio, bool mode);
         void set_jaccard_variation(float thres);
+        void set_euclidian_variation(float thres);
     
         int  get_size();
         // public dump
         void dump_current_vel();
         void dump_vanilla_vel();
         
+        
         // utilities
+        // dump
+        static void dump_vel(vector<Step> *phr);
+        // converter
         static vector<Step> str_to_phr(string str);
         static vector<int> str_to_vel(string str);
         static string vel_to_str(vector<int> ins);
         static string phr_to_str(vector<Step> *phr);
+        static vector<unsigned char> steps_to_bytes(vector<Step> *phr);
+        static vector<int> steps_to_vel(vector<Step> *phr);
+        static vector<int> bytes_to_ints(vector<unsigned char> bytes);
     
-        static void dump_vel(vector<Step> *phr);
-        static vector<unsigned char> get_steps2bytes(vector<Step> *phr);
-        static vector<int> get_bytes2ints(vector<unsigned char> bytes);
+        // swing
         static void swing_phr(vector<Step> *phr, float swing);
-        static vector<int> get_jaccard_variation(vector<Step> *phr, float thres);
-    
-        // jaccard
-        static float wjaccard(string s1, string s2);
-        // normal rand
-        static float normal(float mean, float stdev);
         
-        // analysis tools
-        static float get_density_ratio(vector<Step> *phr); // >1 dense >0 not dense
-        static float get_repetition_ratio(vector<Step> *phr); // >1 repetitive >0 chaotic
-        static float get_repartition_ratio(vector<Step> *phr); // =0.5 in the middle -1 and 1 are edge
+        // variators
+        static vector<int> jaccard_variation(vector<Step> *phr, float thres);
+        static vector<int> gauss_variation(vector<Step> *phr, float thres);
+        static vector<int> euclidian_variation(vector<Step> *phr, float thres);
+    
+        // weigthed jaccard
+        static float wjacc(vector<int> s1, vector<int> s2);
+    
+        // euclidian
+        static float euclidian_distance(vector<int> s1, vector<int> s2);
+    
+        // normal gaussian rand
+        static float normal(float mean, float stdev);
+    
+        // groups of vel
+        static int get_vel_group(int vel);
+        static vector< vector<int> > get_vel_groups(vector<Step> *phr);
+    
+        // heuristics tools
+        static float get_density(vector<Step> *phr); // >1 dense >0 not dense
+        static float get_syncopation(vector<Step> *phr); // >0 repetitive >1 syncopated
+        static float get_repartition(vector<Step> *phr); // =0.5 in the middle -1 and 1 are edge
+        static float get_complexity(vector<Step> *phr); // >0 simple on metrics >1 complex
         
         // static const
         static const int MODE_LOW_PERC = 0;

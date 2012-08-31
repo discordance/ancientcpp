@@ -71,6 +71,11 @@ vector<Step>* Trak::get_current()
     return &m_current;
 }
 
+vector<int> Trak::get_current_vel()
+{
+    return Trak::steps_to_vel(&m_current);
+}
+
 vector<Step> Trak::get_current_copy()
 {
     return m_current;
@@ -93,6 +98,18 @@ void Trak::set_size(int size)
     update_size();
 }
 
+void Trak::set_euclidian_variation(float thres)
+{
+    if(!has_events())
+    {
+        return;
+    }
+    if(thres > 0.)
+    {
+        
+    }    
+}
+
 void Trak::set_jaccard_variation(float thres)
 {
     if(!has_events())
@@ -101,7 +118,7 @@ void Trak::set_jaccard_variation(float thres)
     }
     if(thres > 0.)
     {
-        vector<int> vari = get_jaccard_variation(&m_vanilla, thres);
+        vector<int> vari = jaccard_variation(&m_vanilla, thres);
         vector<int>::iterator vel;
         // iterate
         for(vel = vari.begin(); vel != vari.end(); ++vel)
@@ -143,7 +160,7 @@ void Trak::set_xor_variation(float ratio, bool mode)
         }    
         
         unsigned char rate = (unsigned char)ofMap(ratio, 0, 1, 0, 255); // ok valid
-        vector<unsigned char> cbytes = Trak::get_steps2bytes(&m_vanilla);
+        vector<unsigned char> cbytes = Trak::steps_to_bytes(&m_vanilla);
         vector<unsigned char> rbytes;
         vector<unsigned char>::iterator cbyte;
         // iterate
@@ -168,15 +185,22 @@ void Trak::set_xor_variation(float ratio, bool mode)
             rbytes.push_back(tbyte);
         }
         
-        vector<int> res_vels = Trak::get_bytes2ints(rbytes);
+        vector<int> res_vels = Trak::bytes_to_ints(rbytes);
        
         vector<int>::iterator vel;
         for(vel = res_vels.begin(); vel != res_vels.end(); ++vel)
         {
             Step *cstep = &m_current.at(vel - res_vels.begin());
             Step *vstep = &m_vanilla.at(vel - res_vels.begin());
-      
-            cstep->vel = max(*vel,vstep->vel); // we take the max
+            
+            if(Trak::get_vel_group(*vel) != Trak::get_vel_group(vstep->vel))
+            {
+                cstep->vel = *vel;
+            }
+            else
+            {
+                cstep->vel = vstep->vel;
+            }
         }
     }
     else
@@ -308,38 +332,96 @@ void Trak::swing_phr(vector<Step> *phr, float swing)
     }    
 }
 
-vector<int> Trak::get_jaccard_variation(vector<Step> *phr, float thres)
+vector<int> Trak::euclidian_variation(vector<Step> *phr, float thres)
 {
+    int generation = 0;
+    vector<int> target = Trak::steps_to_vel(phr);
     
-    thres = ofClamp(thres, 0.97, 0.99);
-    string goal;
-    string target = phr_to_str(phr);
-    int inc = 4;
     
-    for(int i = 0; i < target.length(); i += inc)
-    {
-        int to = (inc > target.length()-i)? target.length()-i : inc;
-        to += i;
-        string part = target.substr(i,to-i);
-        string res;
-        float score = 1;
+}
 
+vector<int> Trak::gauss_variation(vector<Step> *phr, float thres)
+{
+    vector<int> res;
+    
+    vector<Step>::iterator step;
+    for(step = phr->begin(); step != phr->end(); ++step)
+    {
+        int stddev = 15 * thres;
+        int rvel = ofClamp(Trak::normal( step->vel, stddev),0,15);
+        if(Trak::get_vel_group(rvel) != Trak::get_vel_group(step->vel))
+        {    
+            res.push_back(rvel);
+        }
+        else
+        {
+            res.push_back(step->vel);
+        }
+    }
+    return res;
+}
+
+vector<int> Trak::jaccard_variation(vector<Step> *phr, float thres)
+{
+    thres = ofClamp(thres, 0.97, 0.99);
+    int inc = 4;
+    vector<int> target;
+    vector<int> goal;
+    target = Trak::steps_to_vel(phr);
+    for(int i = 0; i < target.size(); i += inc)
+    {
+        int to = (inc > target.size()-i)? target.size()-i : inc;
+        to += i;
+        vector<int>::const_iterator beg = target.begin() + i;
+        vector<int>::const_iterator end = beg + (to-i);
+        vector<int> part(beg,end);
+        vector<int> res;
+        float score = 1;
+        int stedv = 15;
+        vector<int> rnd;
         while (score > thres) {
-            vector<int> rnd;
+            
             for(int j = i; j < to; ++j)
             {
-                //ofLog(OF_LOG_NOTICE, ofToString(j) + " " + ofToString(i) + " " + ofToString(to));
-                int rvel = ofClamp(Trak::normal( phr->at(j).vel, 12.),0,15);
-                rnd.push_back(rvel);
+                rnd.push_back(ofClamp(Trak::normal(target.at(j),stedv),0,15));
             }
-            res = Trak::vel_to_str(rnd);
-            score = Trak::wjaccard(part, res);
-            //ofLog(OF_LOG_NOTICE, "res " + res + " part " + part + " score " + ofToString(score));
+            res = rnd;
+            score = Trak::wjacc(rnd, part);
+            rnd.clear();
+            stedv -= 0.1;
         }
-        goal += res;
+        goal.insert(goal.end(), res.begin(), res.end());
     }
-   // ofLog(OF_LOG_NOTICE, goal);
-    return Trak::str_to_vel(goal);
+    return goal;
+}
+
+vector< vector<int> > Trak::get_vel_groups(vector<Step> *phr)
+{
+    vector< vector<int> > res;
+    for(int i = 0; i < 4; ++i)
+    {
+        vector<int> group;
+        vector<Step>::iterator step;
+        for(step = phr->begin(); step != phr->end(); ++step)
+        {
+            if(Trak::get_vel_group(step->vel) == i)
+            {
+                group.push_back(step->vel);
+            }
+            else
+            {
+                group.push_back(0);
+            }
+        }
+        res.push_back(group);
+    }
+    return res;
+}
+
+// group of a vel
+int Trak::get_vel_group(int vel)
+{
+    return vel / 4;
 }
 
 // gaussian random
@@ -349,49 +431,62 @@ float Trak::normal(float mean, float stdev)
     return rnd * stdev + mean;
 }
 
-// weighted jaccard
-float Trak::wjaccard(string s1, string s2)
+float Trak::euclidian_distance(vector<int> s1, vector<int> s2)
 {
     int l1, l2;
-    l1 = s1.length();
-    l2 = s2.length();
+    l1 = s1.size();
+    l2 = s2.size();
     int ct = 0;
-    float  a = 0, b = 0 , same = 0, diff = 0 ;
-    /* strings must be of equal size and non-zero length */
-    if (l1 == 0 || l1 != l2) {
-        return (-1.0);
+    float tt = 0.;
+    if (l1 == 0 || l1 != l2) // lengh > 0 and same length
+    {
+        return -1.;
     }
-    if(s1.compare(s2) == 0)
+    if(s1 == s2)
     {
         return 0.;
     }
-    while (ct != l1) {
-        
+    vector<int>::iterator iter;
+    for(iter = s1.begin(); iter != s1.end(); ++iter)
+    {
+        ct = iter - s1.begin();
+        tt += powf((s1.at(ct) - s2.at(ct)), 2);
+    }
+    return sqrtf(tt) / sqrtf(powf(15, 2)*l1) ;
+}
+
+// weighted jaccard distance
+float Trak::wjacc(vector<int> s1, vector<int> s2)
+{
+    int l1, l2;
+    l1 = s1.size();
+    l2 = s2.size();
+    int ct = 0;
+    float  a = 0, b = 0 , same = 0, diff = 0 ;
+    if (l1 == 0 || l1 != l2) // lengh > 0 and same length
+    {
+        return -1.;
+    }
+    if(s1 == s2)
+    {
+        return 0.;
+    }
+    while (ct != l1) 
+    {
         if (s1.at(ct) == s2.at(ct)) {
             same++;
         } else {
-            int aa,bb;
-            std::stringstream ss1, ss2;
-            ss1 << std::hex << s1.at(ct);
-            ss1 >> aa;
-       
-            ss2 << std::hex << s2.at(ct);
-            ss2 >> bb;
-            
-            a = pow((float)aa,2);
-            b = pow((float)bb,2);
+            a = pow((float)s1.at(ct),2);
+            b = pow((float)s2.at(ct),2);
             diff += abs(a-b);
-            
         }
         ct++;
     }
     return (1 - (same / (diff + same)));
 }
 
-
-
 // byte array to vector of int
-vector<int> Trak::get_bytes2ints(vector<unsigned char> bytes)
+vector<int> Trak::bytes_to_ints(vector<unsigned char> bytes)
 {
     vector<int> res;
     vector<unsigned char>::iterator cbyte;
@@ -405,8 +500,19 @@ vector<int> Trak::get_bytes2ints(vector<unsigned char> bytes)
     return res;
 }
 
+vector<int> Trak::steps_to_vel(vector<Step> *phr)
+{
+    vector<int> res;
+    vector<Step>::iterator step;
+    for(step = phr->begin(); step != phr->end(); ++step)
+    {
+        res.push_back(step->vel);
+    }    
+    return res;
+}
+
 // vector of steps to byte array
-vector<unsigned char> Trak::get_steps2bytes(vector<Step> *phr)
+vector<unsigned char> Trak::steps_to_bytes(vector<Step> *phr)
 {
     vector<unsigned char> res;
     for(int i = 0; i < phr->size(); i+=2) 
@@ -440,6 +546,57 @@ void Trak::dump_vel(vector<Step> *phr)
     }
     ofLog(OF_LOG_NOTICE, dumped);
 }
+
+
+// heuristics tools
+//  
+//
+//
+float Trak::get_density(vector<Step> *phr)
+{
+    vector< vector<int> > groups = Trak::get_vel_groups(phr);
+    vector< vector<int> >::iterator group;
+    vector<float> densities;
+    float tt_densities = 0.;
+    for(group = groups.begin(); group != groups.end(); ++group)
+    {
+        // group density
+        vector<int>::iterator vel;
+        float onsets = 0;
+        for(vel = group->begin(); vel != group->end(); ++vel)
+        {
+            if(*vel > 0)
+            {
+                onsets++;
+            }
+        }
+        densities.push_back(onsets/group->size());
+        ofLog(OF_LOG_NOTICE, ofToString(onsets / group->size()));
+    }
+    
+    vector<float>::iterator density;
+    for(density = densities.begin(); density != densities.end(); ++density)
+    {
+        int mult = (density - densities.begin() + 1);
+        tt_densities += (*density) * mult;
+    }
+    return tt_densities/4;
+} // >1 dense >0 not dense
+
+float Trak::get_syncopation(vector<Step> *phr)
+{
+
+} // >0 repetitive >1 syncopated
+
+float Trak::get_repartition(vector<Step> *phr)
+{
+
+}// =0.5 in the middle -1 and 1 are edge
+
+float Trak::get_complexity(vector<Step> *phr)
+{
+
+} // >0 simple on metrics >1 complex
 
 //protected
 

@@ -13,6 +13,7 @@ Ancient::Ancient()
     m_swing = 0.;
     m_xor_variation = 0.;
     m_xor_mode = false;
+    m_jacc_variation = 0;
     
     // init eight tracks
     for(int i = 0; i < 8 ; i++)
@@ -23,12 +24,17 @@ Ancient::Ancient()
     }
     
     // test set
+    /*
+    m_tracks[0].set_vanilla(Trak::str_to_phr("f000f000f006f000f000f000f000f000"),Trak::MODE_LOW_PERC);
+    m_tracks[1].set_vanilla(Trak::str_to_phr("05000f000f00006000000f000f000060"),Trak::MODE_SNARE);*/
     
-    m_tracks[0].set_vanilla(Trak::str_to_phr("f000f000f00f0000f000f000f00f0000"),Trak::MODE_LOW_PERC);
-    m_tracks[1].set_vanilla(Trak::str_to_phr("05000f000f00006000000f000f000060"),Trak::MODE_SNARE);
-    m_tracks[3].set_vanilla(Trak::str_to_phr("00f000f6 00f000f000f000f000f000f"),Trak::MODE_OVERHEAD);
-    m_tracks[4].set_vanilla(Trak::str_to_phr("69896989698969896989698969896989"),Trak::MODE_OVERHEAD);
+    m_tracks[0].set_vanilla(Trak::str_to_phr("f000f000f000f000"),Trak::MODE_LOW_PERC);
+    m_tracks[1].set_vanilla(Trak::str_to_phr("05000f000f000060"),Trak::MODE_SNARE);    
+    m_tracks[3].set_vanilla(Trak::str_to_phr("00f000f6f00f000f"),Trak::MODE_OVERHEAD);
+    m_tracks[4].set_vanilla(Trak::str_to_phr("6989698969896989"),Trak::MODE_OVERHEAD);
     
+    //ofLog(OF_LOG_NOTICE, "testus : " + ofToString(Trak::euclidian_distance(m_tracks[0].get_current_vel(), m_tracks[1].get_current_vel())));
+    ofLog(OF_LOG_NOTICE, "testus density : " + ofToString(Trak::get_density(m_tracks[0].get_current())));
     // pitch map stuff
     static const int arr[] = {36,// kick
                               38,// snare1

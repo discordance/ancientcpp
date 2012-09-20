@@ -79,6 +79,7 @@ class Trak {
         static float get_density(vector<int> phr); // >1 dense >0 not dense
         static float get_syncopation(vector<int> phr); // >0 repetitive >1 syncopated
         static float get_repartition(vector<int> phr); // =0.5 in the middle -1 and 1 are edge
+        static float get_repetitiveness(vector<int> phr); // =0.5 in the middle -1 and 1 are edge
         
         // utils 2
         static vector<int> get_syncopation_weights(int size);

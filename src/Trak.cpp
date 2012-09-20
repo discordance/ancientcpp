@@ -659,13 +659,61 @@ float Trak::get_syncopation(vector<int> phr)
 
 } // >0 repetitive >1 syncopated
 
+/*
+ * Inspired from Ianis Lallemand
+ */
 float Trak::get_repartition(vector<int> phr)
 {
     vector< vector<int> > groups = Trak::get_vel_groups(phr);
     vector< vector<int> >::iterator group;
     vector<float> repartitions;
+    for(group = groups.begin(); group != groups.end(); ++group)
+    {
+        vector<int> active;
+        float split = 0.;
+        float numerator = 0.;
+        vector<int>::iterator vel;
+        for(vel = group->begin(); vel != group->end(); ++vel)
+        {
+            if(*vel)
+            {
+                active.push_back(vel - group->begin());
+            }
+        }
+        
+        split = active.size() / 2.;
 
-}// =0.5 in the middle -1 and 1 are edge
+        if(active.size())
+        {
+            if(floorf(split) != split)
+            {
+                numerator =  (active.at(floor(split)) + active.at(ceil(split)))/2;  
+            }
+            else
+            {
+                numerator = active.at((int)split);
+            }
+            repartitions.push_back( numerator / (float)group->size());
+        }
+        else
+        {
+            repartitions.push_back(0.5);
+        }
+    }
+    float tt_repartitions = 0.;
+    float tt_mult = 0.;
+    
+    vector<float>::iterator repartition;
+    for(repartition = repartitions.begin(); repartition != repartitions.end(); ++repartition)
+    {
+        int mult = (repartition - repartitions.begin() + 1);
+        tt_mult += mult;
+        tt_repartitions += (*repartition) * mult;
+    }
+    return tt_repartitions/tt_mult;
+    
+
+}// =0.5 in the middle 0 and 1 are edge
 
 int Trak::get_syncopation_score(vector<int> phr, vector<int> weights)
 {

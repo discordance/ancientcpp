@@ -11,6 +11,7 @@
 #include <vector>
 #include "ofTypes.h"
 #include "Trak.h"
+class Seq; 
 #include "Seq.h"
 
 class Ancient : public ofThread
@@ -25,7 +26,10 @@ class Ancient : public ofThread
         void set_xor_mode(bool mode);
         void set_jaccard_variation(float thres);
         void assign_pitchmap(vector<int> pitchmap);
+        void notify_bar(); // be informed that a bar is going on
         vector<Trak>* get_tracks();
+    
+        bool m_auto_variation;
     
     protected:
         vector<Trak> m_tracks;

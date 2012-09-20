@@ -39,10 +39,10 @@ class Trak {
         void dump_vanilla_vel();
         
         
-        // utilities
+        /**** utilities ****/
         // dump
         static void dump_vel(vector<Step> *phr);
-        // converter
+        // converters
         static vector<Step> str_to_phr(string str);
         static vector<int> str_to_vel(string str);
         static string vel_to_str(vector<int> ins);
@@ -58,7 +58,10 @@ class Trak {
         static vector<int> jaccard_variation(vector<Step> *phr, float thres);
         static vector<int> gauss_variation(vector<Step> *phr, float thres);
         static vector<int> euclidian_variation(vector<Step> *phr, float thres);
-    
+        
+        // generators;
+        static vector< vector<int> > generate_pure_randoms(int size);
+        
         // weigthed jaccard
         static float wjacc(vector<int> s1, vector<int> s2);
     
@@ -70,13 +73,17 @@ class Trak {
     
         // groups of vel
         static int get_vel_group(int vel);
-        static vector< vector<int> > get_vel_groups(vector<Step> *phr);
+        static vector< vector<int> > get_vel_groups(vector<int> phr, bool nested);
     
         // heuristics tools
-        static float get_density(vector<Step> *phr); // >1 dense >0 not dense
-        static float get_syncopation(vector<Step> *phr); // >0 repetitive >1 syncopated
-        static float get_repartition(vector<Step> *phr); // =0.5 in the middle -1 and 1 are edge
-        static float get_complexity(vector<Step> *phr); // >0 simple on metrics >1 complex
+        static float get_density(vector<int> phr); // >1 dense >0 not dense
+        static float get_syncopation(vector<int> phr); // >0 repetitive >1 syncopated
+        static float get_repartition(vector<int> phr); // =0.5 in the middle -1 and 1 are edge
+        
+        // utils 2
+        static vector<int> get_syncopation_weights(int size);
+        static int get_syncopation_score(vector<int> phr, vector<int> weights);
+        static int get_max_syncopation(int size);
         
         // static const
         static const int MODE_LOW_PERC = 0;
@@ -111,6 +118,7 @@ class Trak {
         // utilities
         void update_size();
         float get_variation_rate();
+    
 };
 
 #endif

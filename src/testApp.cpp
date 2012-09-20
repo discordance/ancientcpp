@@ -9,6 +9,7 @@ void testApp::setup()
     m_view_bpm = 120;
     m_view_midi_delay = 4;
     m_view_swing = 0.;
+    m_view_auto_variation = false;
     m_view_xor_mode = false;
     m_view_xor_variation =0.;    
     m_view_jacc_variation = 0.;
@@ -31,10 +32,12 @@ void testApp::setup()
     gui_g->addWidgetDown(new ofxUISpacer(48-xInit, 1)); 
     w = gui_g->addWidgetDown(new ofxUISlider(length-xInit,dim, -0.99, 0.99, m_view_swing, "swing")); 
     w->setColorBack(ofColor(255,128,0,128));
+    w = gui_g->addWidgetDown(new ofxUIToggle(dim*4, dim*4, m_view_auto_variation, "auto_variation")); 
+    w->setColorBack(ofColor(255,128,0,128));
     gui_g->addWidgetDown(new ofxUILabel("XOR VARIATOR ...........", OFX_UI_FONT_MEDIUM));
     gui_g->addWidgetDown(new ofxUISpacer(length-xInit, 1)); 
-    w = gui_g->addWidgetDown(new ofxUISlider(length-xInit,dim*2, 0., 1., m_view_xor_variation, "xor_variation"));  
-    w->setColorBack(ofColor(255,128,0,128));
+    m_view_xor_slider = (ofxUISlider *) gui_g->addWidgetDown(new ofxUISlider(length-xInit,dim*2, 0., 1., m_view_xor_variation, "xor_variation"));  
+    m_view_xor_slider->setColorBack(ofColor(255,128,0,128));
     
     // XOR var modes
     vector<string> xor_modes; 
@@ -46,10 +49,12 @@ void testApp::setup()
     tggls.at(1)->setColorBack(ofColor(255,128,0,128));
     xor_modes_gui->activateToggle(xor_modes[0]);
     gui_g->addWidgetDown(new ofxUILabel("JAC VARIATOR ...........", OFX_UI_FONT_MEDIUM));
+    m_view_jacc_slider = (ofxUISlider *) gui_g->addWidgetDown(new ofxUISlider(length-xInit,dim*2, 0., 1., m_view_jacc_variation, "jacc_variation"));  
+    m_view_jacc_slider->setColorBack(ofColor(255,128,0,128));
     gui_g->addWidgetDown(new ofxUISpacer(length-xInit, 1));
-    w = gui_g->addWidgetDown(new ofxUIButton(dim*4, dim*4, false, "smooth_variation"));  
+    w = gui_g->addWidgetDown(new ofxUIButton(dim*4, dim*4, false, "smooth_jacc_variation"));  
     w->setColorBack(ofColor(255,128,0,128));
-    w = gui_g->addWidgetDown(new ofxUIButton(dim*4, dim*4, false, "hard_variation")); 
+    w = gui_g->addWidgetDown(new ofxUIButton(dim*4, dim*4, false, "hard_jacc_variation")); 
     w->setColorBack(ofColor(255,128,0,128));
     w = gui_g->addWidgetDown(new ofxUIButton(dim*4, dim*4, false, "vanilla")); 
     w->setColorBack(ofColor(255,128,0));
@@ -120,10 +125,18 @@ void testApp::gui_gEvent(ofxUIEventArgs &e)
 		m_view_swing = slider->getScaledValue(); 
         m_ancient.set_swing(m_view_swing);
     }
+    else if(name == "auto_variation")
+    {
+        ofxUIToggle *butt = (ofxUIToggle *) e.widget;
+        m_view_auto_variation = butt->getValue();
+        m_ancient.m_auto_variation = m_view_auto_variation;
+    }
     else if(name == "xor_variation")
     {
         ofxUISlider *slider = (ofxUISlider *) e.widget; 
 		m_view_xor_variation = slider->getScaledValue(); 
+        m_view_jacc_variation = 0.;
+        m_view_jacc_slider->setValue(0.);
         m_ancient.set_xor_variation(m_view_xor_variation);
     } 
     else if(name == "part")
@@ -136,18 +149,36 @@ void testApp::gui_gEvent(ofxUIEventArgs &e)
         m_view_xor_mode = true;
         m_ancient.set_xor_mode(m_view_xor_mode);
     }
-    else if(name == "smooth_variation")
+    else if(name == "jacc_variation")
+    {
+        ofxUISlider *slider = (ofxUISlider *) e.widget; 
+		m_view_jacc_variation = ofMap(slider->getScaledValue(), 0., 1., 0.97, 0.99); 
+        if(m_view_jacc_variation < 0.9701) // hack do not why
+        {
+            m_view_jacc_variation = 0.;
+        }
+        m_view_xor_variation = 0.;
+        m_view_xor_slider->setValue(0.);
+        m_ancient.set_jaccard_variation(m_view_jacc_variation);
+    }
+    else if(name == "smooth_jacc_variation")
     {
         ofxUIButton *butt = (ofxUIButton *) e.widget;
         bool val = butt->getValue();
         m_view_jacc_variation = 0.978;
+        m_view_xor_variation = 0.;
+        m_view_xor_slider->setValue(0.);
+        m_view_jacc_slider->setValue(ofMap(m_view_jacc_variation, 0.97,0.99,0.,1.));
         m_ancient.set_jaccard_variation(m_view_jacc_variation);
     }
-    else if(name == "hard_variation")
+    else if(name == "hard_jacc_variation")
     {
         ofxUIButton *butt = (ofxUIButton *) e.widget;
         bool val = butt->getValue(); 
         m_view_jacc_variation = 0.99;
+        m_view_xor_variation = 0.;
+        m_view_xor_slider->setValue(0.);
+        m_view_jacc_slider->setValue(ofMap(m_view_jacc_variation, 0.97,0.99,0.,1.));
         m_ancient.set_jaccard_variation(m_view_jacc_variation);
     }
     else if(name == "vanilla")
@@ -155,6 +186,9 @@ void testApp::gui_gEvent(ofxUIEventArgs &e)
         ofxUIButton *butt = (ofxUIButton *) e.widget;
         bool val = butt->getValue(); 
         m_view_jacc_variation = 0;
+        m_view_xor_variation = 0.;
+        m_view_xor_slider->setValue(0.);
+        m_view_jacc_slider->setValue(0.);
         m_ancient.set_jaccard_variation(0);
     }
     

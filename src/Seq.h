@@ -12,13 +12,14 @@
 #include "ofxMidi.h"
 #include "utils/ofLog.h"
 #include "utils/ofUtils.h"
+class Ancient;
+#include "Ancient.h"
 #include "Trak.h"
 
 using namespace std;
 
 class Seq : public ofxMidiListener, public ofThread
 {
-    
     public:
         Seq();
         float get_bpm();
@@ -26,7 +27,7 @@ class Seq : public ofxMidiListener, public ofThread
         void set_midi_delay(int dly);
         void exit();
         void update_drum_tracks(vector<Trak> *tracks);
-        
+        void set_ancient(Ancient * anc);
     
     protected:
         // evt
@@ -48,6 +49,9 @@ class Seq : public ofxMidiListener, public ofThread
         ofxMidiOut  m_virtual_midiOut; // for internal routing
         ofxMidiOut  m_hard_midiOut; // for hardware routing
         ofxMidiMessage m_midiMessage;
+        
+        // ancient to notify timing
+        Ancient *m_ancient;
         
         // seq mode/ res
         bool m_synced_seq; // tells if the sequencer is sync to an external clock or not (use an internal clock thread)

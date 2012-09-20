@@ -10,6 +10,7 @@
 
 Ancient::Ancient()
 {
+    m_auto_variation = false;
     m_swing = 0.;
     m_xor_variation = 0.;
     m_xor_mode = false;
@@ -29,12 +30,19 @@ Ancient::Ancient()
     m_tracks[1].set_vanilla(Trak::str_to_phr("05000f000f00006000000f000f000060"),Trak::MODE_SNARE);*/
     
     m_tracks[0].set_vanilla(Trak::str_to_phr("f000f000f000f000"),Trak::MODE_LOW_PERC);
-    m_tracks[1].set_vanilla(Trak::str_to_phr("05000f000f000060"),Trak::MODE_SNARE);    
+    m_tracks[1].set_vanilla(Trak::str_to_phr("000000f00000"),Trak::MODE_SNARE);    
     m_tracks[3].set_vanilla(Trak::str_to_phr("00f000f6f00f000f"),Trak::MODE_OVERHEAD);
-    m_tracks[4].set_vanilla(Trak::str_to_phr("6989698969896989"),Trak::MODE_OVERHEAD);
+    //m_tracks[4].set_vanilla(Trak::str_to_phr("6989698969896989"),Trak::MODE_OVERHEAD);
+    m_tracks[4].set_vanilla(Trak::str_to_phr("f00f5000f000f000"),Trak::MODE_OVERHEAD);
+    
+    ofLog(OF_LOG_NOTICE, ofToString(Trak::get_syncopation(m_tracks[4].get_current_vel())));
+    //ofLog(OF_LOG_NOTICE, "mulo " + ofToString();
     
     //ofLog(OF_LOG_NOTICE, "testus : " + ofToString(Trak::euclidian_distance(m_tracks[0].get_current_vel(), m_tracks[1].get_current_vel())));
-    ofLog(OF_LOG_NOTICE, "testus density : " + ofToString(Trak::get_density(m_tracks[0].get_current())));
+    //ofLog(OF_LOG_NOTICE, "testus density : " + ofToString(Trak::get_density(m_tracks[0].get_current())));
+    
+    //Trak::generate_pure_randoms(16);
+    
     // pitch map stuff
     static const int arr[] = {36,// kick
                               38,// snare1
@@ -55,9 +63,28 @@ vector<Trak>* Ancient::get_tracks()
     return &m_tracks;
 }
 
+void Ancient::notify_bar()
+{
+    if(m_auto_variation)
+    {
+        if(m_xor_variation > 0.)
+        {
+            set_xor_variation(m_xor_variation);
+            return;
+        }
+        
+        if(m_jacc_variation > 0.)
+        {
+            set_jaccard_variation(m_jacc_variation);
+            return;
+        }
+    }
+}
+
 void Ancient::set_xor_mode(bool mode)
 {
     m_xor_mode = mode;
+    m_jacc_variation = 0.; // not two at the same time
     m_tasks.push_back("xor_var");
     startThread(); // threaded calculus
 }
@@ -65,13 +92,15 @@ void Ancient::set_xor_mode(bool mode)
 void Ancient::set_jaccard_variation(float thres)
 {
     m_jacc_variation = thres;
-    m_tasks.push_back("gauss_var");
+    m_xor_variation = 0.; // not two at the same time
+    m_tasks.push_back("jacc_var");
     startThread();
 } 
 
 void Ancient::set_xor_variation(float ratio)
 {
     m_xor_variation = ratio;
+    m_jacc_variation = 0.; // not two at the same time
     m_tasks.push_back("xor_var");
     startThread();
 }
@@ -86,6 +115,7 @@ void Ancient::set_swing(float swg)
 void Ancient::set_seq(Seq *seq)
 {
     m_seq = seq;
+    m_seq->set_ancient(this);
     m_seq->update_drum_tracks(&m_tracks);
 }
 
@@ -120,7 +150,7 @@ void Ancient::threadedFunction()
             std::vector<Trak>::iterator track;
             for(track = m_tracks.begin(); track != m_tracks.end(); ++track) 
             {
-                if(task == "gauss_var")
+                if(task == "jacc_var")
                 {    
                     track->set_jaccard_variation(m_jacc_variation);
                 }

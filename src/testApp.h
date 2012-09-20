@@ -39,10 +39,14 @@ class testApp : public ofBaseApp{
     
         // 
         void update_sliders();    
-    
+        // view elems
+        ofxUISlider * m_view_xor_slider;
+        ofxUISlider * m_view_jacc_slider;
+        // view values;
         float m_view_bpm;
         int   m_view_midi_delay;
         float m_view_swing;
+        bool  m_view_auto_variation;
         float m_view_xor_variation;
         bool  m_view_xor_mode;
         float m_view_jacc_variation;

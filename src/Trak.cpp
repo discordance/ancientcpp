@@ -361,6 +361,7 @@ vector<int> Trak::gauss_variation(vector<Step> *phr, float thres)
     return res;
 }
 
+// get a variation according to the weighted jaccard method
 vector<int> Trak::jaccard_variation(vector<Step> *phr, float thres)
 {
     thres = ofClamp(thres, 0.97, 0.99);
@@ -395,22 +396,60 @@ vector<int> Trak::jaccard_variation(vector<Step> *phr, float thres)
     return goal;
 }
 
-vector< vector<int> > Trak::get_vel_groups(vector<Step> *phr)
+vector< vector<int> > Trak::generate_pure_randoms(int size)
+{
+    int st = ofGetElapsedTimeMicros();
+    vector< vector<int> > pool;
+    int sample_size = 6400;
+    float chance = 0.99;
+    while (pool.size() < sample_size) 
+    {
+        vector<int> phr;
+        for(int i = 0; i < size; ++i)
+        {
+            int vel = (int)ofClamp(Trak::normal(12, 12),0,15);
+            if(ofRandom(1.) < chance)
+            {
+                vel = 0;
+            }
+            phr.push_back(vel);
+        }
+        pool.push_back(phr);
+        //ofLog(OF_LOG_NOTICE, Trak::vel_to_str(phr) + " density: " + ofToString(Trak::get_density(phr)));
+        if(pool.size() % 64 == 0)
+        {
+            chance -= 0.01;
+        }
+    }
+    ofLog(OF_LOG_NOTICE, "time for generation : " + ofToString(ofGetElapsedTimeMicros() - st));
+    return pool;
+}
+
+vector< vector<int> > Trak::get_vel_groups(vector<int> phr, bool nested = false)
 {
     vector< vector<int> > res;
     for(int i = 0; i < 4; ++i)
     {
         vector<int> group;
-        vector<Step>::iterator step;
-        for(step = phr->begin(); step != phr->end(); ++step)
+        vector<int>::iterator vel;
+        for(vel = phr.begin(); vel != phr.end(); ++vel)
         {
-            if(Trak::get_vel_group(step->vel) == i)
+            int gr = Trak::get_vel_group(*vel);
+            if(gr == i)
             {
-                group.push_back(step->vel);
+                group.push_back(*vel);
             }
             else
             {
-                group.push_back(0);
+                if(nested && gr > i)
+                {
+                    group.push_back(*vel);
+                }
+                else
+                {
+                    group.push_back(0);
+                }
+                
             }
         }
         res.push_back(group);
@@ -552,7 +591,7 @@ void Trak::dump_vel(vector<Step> *phr)
 //  
 //
 //
-float Trak::get_density(vector<Step> *phr)
+float Trak::get_density(vector<int> phr)
 {
     vector< vector<int> > groups = Trak::get_vel_groups(phr);
     vector< vector<int> >::iterator group;
@@ -571,7 +610,6 @@ float Trak::get_density(vector<Step> *phr)
             }
         }
         densities.push_back(onsets/group->size());
-        ofLog(OF_LOG_NOTICE, ofToString(onsets / group->size()));
     }
     
     vector<float>::iterator density;
@@ -583,20 +621,137 @@ float Trak::get_density(vector<Step> *phr)
     return tt_densities/4;
 } // >1 dense >0 not dense
 
-float Trak::get_syncopation(vector<Step> *phr)
+float Trak::get_syncopation(vector<int> phr)
 {
+    // according to the LHL syncopation measure
+    // phrase must be at least one measure so 16 steps, we duplicate:
+    if(phr.size() < 16)
+    {
+        int rest = 16 - phr.size();
+        for (int i = 0; i < rest; ++i)
+        {
+            phr.push_back(phr.at(rest%phr.size()));
+        }
+    }
+
+    vector<int> weights = Trak::get_syncopation_weights(phr.size());
+    float tt_syncopations = 0.;
+    float tt_mult = 0.;
+    // get the vel groups:
+    vector< vector<int> > groups = Trak::get_vel_groups(phr,true);
+    vector< vector<int> >::iterator group;
+    vector<float> syncopations;
+    for(group = groups.begin(); group != groups.end(); ++group)
+    {
+        float score = Trak::get_syncopation_score(*group,weights);
+        float maximum = Trak::get_max_syncopation(phr.size());
+        syncopations.push_back(score/maximum);
+    }    
+    
+    vector<float>::iterator syncopation;
+    for(syncopation = syncopations.begin(); syncopation != syncopations.end(); ++syncopation)
+    {
+        int mult = (syncopation - syncopations.begin() + 1);
+        tt_mult += mult;
+        tt_syncopations += (*syncopation) * mult;
+    }
+    return tt_syncopations/tt_mult;
 
 } // >0 repetitive >1 syncopated
 
-float Trak::get_repartition(vector<Step> *phr)
+float Trak::get_repartition(vector<int> phr)
 {
+    vector< vector<int> > groups = Trak::get_vel_groups(phr);
+    vector< vector<int> >::iterator group;
+    vector<float> repartitions;
 
 }// =0.5 in the middle -1 and 1 are edge
 
-float Trak::get_complexity(vector<Step> *phr)
+int Trak::get_syncopation_score(vector<int> phr, vector<int> weights)
 {
+    vector<int>::iterator vel;
+    float total = 0;
+    for(vel = phr.begin(); vel != phr.end(); ++vel)
+    {
+        int ct = vel - phr.begin();
+        if(!*vel)
+        {
+            int wr = weights[ct%weights.size()];
+            int cct = 0;
+            while(cct <= phr.size())
+            {
+                int idx = (ct-cct)%phr.size();
+                if(idx < 0){ idx += phr.size(); }
+                
+                int val = phr.at(idx);
+                int wn = weights.at(idx%weights.size());
+                
+                if(val)
+                {
+                    if(wn < wr)
+                    {
+                        total += wr-wn;
+                        break;
+                    }
+                }
+                cct++;
+            }
+        }
+    }
+    return total;
+}
 
-} // >0 simple on metrics >1 complex
+
+int Trak::get_max_syncopation(int size)
+{
+    vector<int> test_phr;
+    for (int i = 0; i < size; i++)
+    {
+        if(i%2)
+        {
+            test_phr.push_back(1);
+        }
+        else
+        {
+            test_phr.push_back(0);
+        }
+    }
+    return Trak::get_syncopation_score(test_phr,Trak::get_syncopation_weights(size));
+    
+}
+
+vector<int> Trak::get_syncopation_weights(int size)
+{
+    vector<int> res;
+    for (int i = 0; i < size; i++)
+    {
+        res.push_back(0);
+    }
+    
+    int j = size;
+    int div = 2;
+    
+    if((size/2)%div){
+        div++;
+    }
+    
+    int weight = 0;
+    
+    while(j >= 1)
+    {
+        weight--;
+        for(int t = 0; t < size; t++)
+        {
+            if(t%j != 0)
+            {
+                res[t] = weight;
+            }
+        }
+        j /= div;
+    }
+    return res;
+}
+
 
 //protected
 

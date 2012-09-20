@@ -47,6 +47,11 @@ int Seq::get_ticks()
     return m_ticks;
 }
 
+void Seq::set_ancient(Ancient * anc)
+{
+    m_ancient = anc;
+}
+
 void Seq::set_midi_delay(int dly)
 {
     if(lock())
@@ -64,6 +69,10 @@ void Seq::exit()
     m_virtual_midiOut.closePort();
 }
 
+
+// todo -> groove management is not clean
+// todo -> mute management
+// todo -> ghost note probz ???
 void Seq::update_drum_tracks(vector<Trak> *tracks) // v1, replace all
 {
     if(lock())
@@ -135,6 +144,11 @@ void Seq::reset_events()
 }
 
 void Seq::newMidiMessage(ofxMidiMessage& msg) {
+    
+    if( (m_ticks+m_midi_delay) % (m_resolution*4) == 0 )
+    {
+        m_ancient->notify_bar();
+    }
     
     if( lock() )
     {

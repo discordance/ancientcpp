@@ -715,6 +715,42 @@ float Trak::get_repartition(vector<int> phr)
 
 }// =0.5 in the middle 0 and 1 are edge
 
+float Trak::get_repetitiveness(vector<int> phr)
+{
+    //groups of inc, euclidian distances, averaging
+    int inc = 4;
+    if(floor(phr.size()/(float)inc) != phr.size()/(float)inc)
+    {
+        inc--;
+    }
+    
+    vector<int> prev_part;
+    vector<float> scores;
+    for(int i = 0; i < phr.size(); i += inc)
+    {
+        int to = (inc > phr.size()-i)? phr.size()-i : inc;
+        to += i;
+        vector<int>::const_iterator beg = phr.begin() + i;
+        vector<int>::const_iterator end = beg + (to-i);
+        vector<int> part(beg,end);
+        if(i)
+        {
+            scores.push_back(Trak::euclidian_distance(part, prev_part));
+        }
+        prev_part = part;
+        
+    }
+    
+    float avg_score = 0.;
+    vector<float>::iterator score;
+    for(score = scores.begin(); score != scores.end(); ++score)
+    {
+        avg_score += *score;
+    }
+    return avg_score / (float)scores.size();
+    
+}
+
 int Trak::get_syncopation_score(vector<int> phr, vector<int> weights)
 {
     vector<int>::iterator vel;

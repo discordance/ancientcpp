@@ -36,7 +36,7 @@ Ancient::Ancient()
     //m_tracks[4].set_vanilla(Trak::str_to_phr("f00f5000f000f000"),Trak::MODE_OVERHEAD);
     m_tracks[4].set_vanilla(Trak::str_to_phr("f0000000f0000f00"),Trak::MODE_OVERHEAD);
     
-    ofLog(OF_LOG_NOTICE, ofToString(Trak::get_repartition(m_tracks[4].get_current_vel())));
+    ofLog(OF_LOG_NOTICE, ofToString(Trak::get_repetitiveness(m_tracks[3].get_current_vel())));
     //ofLog(OF_LOG_NOTICE, "mulo " + ofToString();
     
     //ofLog(OF_LOG_NOTICE, "testus : " + ofToString(Trak::euclidian_distance(m_tracks[0].get_current_vel(), m_tracks[1].get_current_vel())));

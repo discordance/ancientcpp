@@ -396,12 +396,100 @@ vector<int> Trak::jaccard_variation(vector<Step> *phr, float thres)
     return goal;
 }
 
+
+vector<int> Trak::generate_cyclic_phr(int size, int bdiv, int cycle, int offset)
+{
+    vector<int> res;
+    for (int i = 0; i < size; ++i) 
+    {   
+        float prob, score = 0.;
+        int vel = 0;
+        int dist = abs(((i+offset) % cycle) - bdiv); // get the dist from modulo
+        if(dist)
+        {
+            prob = 1/(dist+2);
+        } 
+        else 
+        {
+            prob=0.98; // almost impossible to miss here, but life is a bitch sometimes
+        }
+        score=ofRandom(1.);
+        if(score < prob)
+        {
+            vel = floor(Trak::normal(14*prob, 1)); // using normal function, in relation to the prob
+        }
+        else
+        {
+            vel = 0;
+        }
+        res.push_back(vel);
+    }
+    return res;
+}
+
+vector< vector<int> > Trak::generate_cyclic_randoms(int size)
+{
+    int bdiv = 0;
+    int cycle = 2;
+    int offset = 0;
+    vector< vector<int> > pool;
+    int sample_size = 6400;
+    while (pool.size() < sample_size) 
+    {
+        vector<int> phr = Trak::generate_cyclic_phr(size, bdiv, cycle, offset);
+        pool.push_back(phr);
+        
+        if(pool.size() % 64 == 0)
+        {
+            cycle = (cycle+1)%size;
+            if(cycle < 1)
+            {
+                cycle = 2;
+            }
+            bdiv = ((int)ofRandom(0., size)) % cycle;
+            offset = ((int)ofRandom(0., size)) % cycle;
+        }
+        
+    }
+    return pool;
+}
+
+vector< vector<int> > Trak::ga(int size, float den, float rpv, float syn, float rep)
+{
+    vector< vector<int> > pool = Trak::generate_pure_randoms(size); // get some randoms
+    vector< vector<int> > cyclic_pool = Trak::generate_cyclic_randoms(size); // get cyclic randoms
+    pool.insert(pool.end(), cyclic_pool.begin(), cyclic_pool.end()); // merge them
+    
+    std::map<float, vector<int> > generation;
+    vector< vector<int> >::iterator phr;
+    for(phr = pool.begin(); phr != pool.end(); ++phr)
+    {
+        float fit = Trak::fitness_score(*phr,den,rpv,syn,rep);
+        generation[Trak::fitness_score(*phr,den,rpv,syn,rep)] = *phr;
+        //ofLog(OF_LOG_NOTICE, "fit "+ofToString(fit));
+    }
+    
+    ofLog(OF_LOG_NOTICE, Trak::vel_to_str(generation.begin()->second));
+    ofLog(OF_LOG_NOTICE, ofToString(generation.begin()->first));
+}
+
+float Trak::fitness_score(vector<int> phr, float den, float rpv, float syn, float rep)
+{
+    float den_dist, rpv_dist, syn_dist, rep_dist = 0.;
+    den_dist = abs(Trak::get_density(phr)-den);
+    rpv_dist = abs(Trak::get_repetitiveness(phr)-rpv);
+    syn_dist = abs(Trak::get_syncopation(phr)-syn);
+    rep_dist = abs(Trak::get_repartition(phr)-rep);
+    
+    return (den_dist+rpv_dist+syn_dist+rep_dist)/4;
+}
+
 vector< vector<int> > Trak::generate_pure_randoms(int size)
 {
     int st = ofGetElapsedTimeMicros();
     vector< vector<int> > pool;
     int sample_size = 6400;
-    float chance = 0.99;
+    float chance = 0.95;
     while (pool.size() < sample_size) 
     {
         vector<int> phr;
@@ -414,14 +502,18 @@ vector< vector<int> > Trak::generate_pure_randoms(int size)
             }
             phr.push_back(vel);
         }
-        pool.push_back(phr);
-        //ofLog(OF_LOG_NOTICE, Trak::vel_to_str(phr) + " density: " + ofToString(Trak::get_density(phr)));
+        if(accumulate(phr.begin(),phr.end(),0))
+        {
+            pool.push_back(phr);
+        }
+        
+
         if(pool.size() % 64 == 0)
         {
             chance -= 0.01;
         }
     }
-    ofLog(OF_LOG_NOTICE, "time for generation : " + ofToString(ofGetElapsedTimeMicros() - st));
+    //ofLog(OF_LOG_NOTICE, "time for generation : " + ofToString(ofGetElapsedTimeMicros() - st));
     return pool;
 }
 
@@ -682,10 +774,9 @@ float Trak::get_repartition(vector<int> phr)
         }
         
         split = active.size() / 2.;
-
         if(active.size())
         {
-            if(floorf(split) != split)
+            if(floorf(split) != split && active.size() > 1)
             {
                 numerator =  (active.at(floor(split)) + active.at(ceil(split)))/2;  
             }

@@ -36,13 +36,16 @@ Ancient::Ancient()
     //m_tracks[4].set_vanilla(Trak::str_to_phr("f00f5000f000f000"),Trak::MODE_OVERHEAD);
     m_tracks[4].set_vanilla(Trak::str_to_phr("f0000000f0000f00"),Trak::MODE_OVERHEAD);
     
-    ofLog(OF_LOG_NOTICE, ofToString(Trak::get_repetitiveness(m_tracks[3].get_current_vel())));
+    //ofLog(OF_LOG_NOTICE, ofToString(Trak::get_repetitiveness(m_tracks[0].get_current_vel())));
     //ofLog(OF_LOG_NOTICE, "mulo " + ofToString();
     
     //ofLog(OF_LOG_NOTICE, "testus : " + ofToString(Trak::euclidian_distance(m_tracks[0].get_current_vel(), m_tracks[1].get_current_vel())));
     //ofLog(OF_LOG_NOTICE, "testus density : " + ofToString(Trak::get_density(m_tracks[0].get_current())));
     
     //Trak::generate_pure_randoms(16);
+   // Trak::generate_cyclic_randoms(16);
+   // den rpv syn, rep
+    Trak::ga(16,0.2,0.6,0.5,0.8);
     
     // pitch map stuff
     static const int arr[] = {36,// kick

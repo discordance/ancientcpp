@@ -7,6 +7,8 @@
 #define TRACK
 
 #include <vector>
+#include <map>
+#include <numeric> 
 #include "Step.h"
 #include "utils/ofLog.h"
 #include "utils/ofUtils.h"
@@ -60,7 +62,10 @@ class Trak {
         static vector<int> euclidian_variation(vector<Step> *phr, float thres);
         
         // generators;
+        static vector<int> generate_cyclic_phr(int size, int bdiv, int cycle, int offset);
         static vector< vector<int> > generate_pure_randoms(int size);
+        static vector< vector<int> > generate_cyclic_randoms(int size);
+        static vector< vector<int> > ga(int size, float den, float rpv, float syn, float rep);
         
         // weigthed jaccard
         static float wjacc(vector<int> s1, vector<int> s2);
@@ -85,6 +90,7 @@ class Trak {
         static vector<int> get_syncopation_weights(int size);
         static int get_syncopation_score(vector<int> phr, vector<int> weights);
         static int get_max_syncopation(int size);
+        static float fitness_score(vector<int> phr, float den, float rpv, float syn, float rep);
         
         // static const
         static const int MODE_LOW_PERC = 0;

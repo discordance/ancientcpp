@@ -45,7 +45,7 @@ Ancient::Ancient()
     //Trak::generate_pure_randoms(16);
    // Trak::generate_cyclic_randoms(16);
    // den rpv syn, rep
-    Trak::ga(16,0.2,0.6,0.5,0.8);
+    Trak::ga(16,0.2,1,0.,0.5);
     
     // pitch map stuff
     static const int arr[] = {36,// kick

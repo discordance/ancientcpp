@@ -427,19 +427,104 @@ vector<int> Trak::generate_cyclic_phr(int size, int bdiv, int cycle, int offset)
     return res;
 }
 
-vector< vector<int> > Trak::generate_cyclic_randoms(int size)
+vector< vector<int> > Trak::ga(int size, float den, float rpv, float syn, float rep)
+{
+    int gen_num = 10;
+    vector< vector<int> > pool = Trak::generate_stochastic(size, 1024, den); // get some randoms
+    vector< vector<int> > cyclic_pool = Trak::generate_cyclic(size, 512); // get cyclic randoms
+    pool.insert(pool.end(), cyclic_pool.begin(), cyclic_pool.end()); // merge them
+    int total_population = pool.size();
+    
+    // first generation initiated.
+    while(gen_num > 0)
+    {
+        std::map<float, vector<int> > generation;
+        vector< vector<int> >::iterator phr;
+        for(phr = pool.begin(); phr != pool.end(); ++phr)
+        {
+            float fit = Trak::fitness_score(*phr,den,rpv,syn,rep);
+            generation[Trak::fitness_score(*phr,den,rpv,syn,rep)] = *phr;
+        }
+        ofLog(OF_LOG_NOTICE, ofToString(generation.size()));
+         //ofLog(OF_LOG_NOTICE, ofToString(pool.size()));
+        pool.clear(); // clear pool and re-use;
+        std::map<float, vector<int> >::iterator gen;
+        int group = 0;
+        for(gen = generation.begin(); gen != generation.end(); ++gen)
+        {
+            int ct = std::distance(generation.begin(), gen);
+            
+            if(ct % (total_population/4) == 0)
+            {
+                group++;
+            }
+           // ofLog(OF_LOG_NOTICE, ofToString(group) + " " + ofToString(generation.size()));
+            switch (group)
+            {
+                case 0:
+                    
+                    break;
+                    
+                default:
+                    break;
+            }
+        }
+        
+        gen_num--;
+    }
+    /*
+    std::map<float, vector<int> > generation;
+    vector< vector<int> >::iterator phr;
+    for(phr = pool.begin(); phr != pool.end(); ++phr)
+    {
+        float fit = Trak::fitness_score(*phr,den,rpv,syn,rep);
+        generation[Trak::fitness_score(*phr,den,rpv,syn,rep)] = *phr;
+    }
+     */
+    /*
+    
+    std::map<float, vector<int> >::iterator gen;
+    for(gen = generation.begin(); gen != generation.end(); ++gen)
+    {
+        ofLog(OF_LOG_NOTICE, Trak::vel_to_str(gen->second));
+        ofLog(OF_LOG_NOTICE, ofToString(gen->first));
+    }
+    */
+}
+
+vector< vector <int> > mutate_in(vector< vector <int> >)
+{
+    
+}
+
+vector< vector <int> > mutate_out(vector< vector <int> >)
+{
+
+}
+
+float Trak::fitness_score(vector<int> phr, float den, float rpv, float syn, float rep)
+{
+    float den_dist, rpv_dist, syn_dist, rep_dist = 0.;
+    den_dist = abs(Trak::get_density(phr)-den);
+    rpv_dist = abs(Trak::get_repetitiveness(phr)-rpv);
+    syn_dist = abs(Trak::get_syncopation(phr)-syn);
+    rep_dist = abs(Trak::get_repartition(phr)-rep);
+    
+    return (den_dist+rpv_dist+syn_dist+rep_dist)/4;
+}
+
+vector< vector<int> > Trak::generate_cyclic(int size, int sample_size)
 {
     int bdiv = 0;
     int cycle = 2;
     int offset = 0;
     vector< vector<int> > pool;
-    int sample_size = 6400;
-    while (pool.size() < sample_size) 
+    while (pool.size() < sample_size)
     {
         vector<int> phr = Trak::generate_cyclic_phr(size, bdiv, cycle, offset);
         pool.push_back(phr);
         
-        if(pool.size() % 64 == 0)
+        if(pool.size() % 2 == 0)
         {
             cycle = (cycle+1)%size;
             if(cycle < 1)
@@ -454,49 +539,17 @@ vector< vector<int> > Trak::generate_cyclic_randoms(int size)
     return pool;
 }
 
-vector< vector<int> > Trak::ga(int size, float den, float rpv, float syn, float rep)
+vector< vector<int> > Trak::generate_stochastic(int size, int sample_size, float den)
 {
-    vector< vector<int> > pool = Trak::generate_pure_randoms(size); // get some randoms
-    vector< vector<int> > cyclic_pool = Trak::generate_cyclic_randoms(size); // get cyclic randoms
-    pool.insert(pool.end(), cyclic_pool.begin(), cyclic_pool.end()); // merge them
-    
-    std::map<float, vector<int> > generation;
-    vector< vector<int> >::iterator phr;
-    for(phr = pool.begin(); phr != pool.end(); ++phr)
-    {
-        float fit = Trak::fitness_score(*phr,den,rpv,syn,rep);
-        generation[Trak::fitness_score(*phr,den,rpv,syn,rep)] = *phr;
-        //ofLog(OF_LOG_NOTICE, "fit "+ofToString(fit));
-    }
-    
-    ofLog(OF_LOG_NOTICE, Trak::vel_to_str(generation.begin()->second));
-    ofLog(OF_LOG_NOTICE, ofToString(generation.begin()->first));
-}
-
-float Trak::fitness_score(vector<int> phr, float den, float rpv, float syn, float rep)
-{
-    float den_dist, rpv_dist, syn_dist, rep_dist = 0.;
-    den_dist = abs(Trak::get_density(phr)-den);
-    rpv_dist = abs(Trak::get_repetitiveness(phr)-rpv);
-    syn_dist = abs(Trak::get_syncopation(phr)-syn);
-    rep_dist = abs(Trak::get_repartition(phr)-rep);
-    
-    return (den_dist+rpv_dist+syn_dist+rep_dist)/4;
-}
-
-vector< vector<int> > Trak::generate_pure_randoms(int size)
-{
-    int st = ofGetElapsedTimeMicros();
     vector< vector<int> > pool;
-    int sample_size = 6400;
-    float chance = 0.95;
+    float chance = den;
     while (pool.size() < sample_size) 
     {
         vector<int> phr;
         for(int i = 0; i < size; ++i)
         {
             int vel = (int)ofClamp(Trak::normal(12, 12),0,15);
-            if(ofRandom(1.) < chance)
+            if(ofRandom(1.) > chance)
             {
                 vel = 0;
             }
@@ -508,12 +561,12 @@ vector< vector<int> > Trak::generate_pure_randoms(int size)
         }
         
 
-        if(pool.size() % 64 == 0)
+        if(pool.size() % 2 == 0)
         {
-            chance -= 0.01;
+            chance = ofClamp(Trak::normal(den, 0.4),0.05, 0.95);
         }
     }
-    //ofLog(OF_LOG_NOTICE, "time for generation : " + ofToString(ofGetElapsedTimeMicros() - st));
+
     return pool;
 }
 

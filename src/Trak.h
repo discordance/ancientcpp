@@ -63,8 +63,8 @@ class Trak {
         
         // generators;
         static vector<int> generate_cyclic_phr(int size, int bdiv, int cycle, int offset);
-        static vector< vector<int> > generate_pure_randoms(int size);
-        static vector< vector<int> > generate_cyclic_randoms(int size);
+        static vector< vector<int> > generate_stochastic(int size, int sample_size, float den);
+        static vector< vector<int> > generate_cyclic(int size, int sample_size);
         static vector< vector<int> > ga(int size, float den, float rpv, float syn, float rep);
         
         // weigthed jaccard
@@ -91,7 +91,9 @@ class Trak {
         static int get_syncopation_score(vector<int> phr, vector<int> weights);
         static int get_max_syncopation(int size);
         static float fitness_score(vector<int> phr, float den, float rpv, float syn, float rep);
-        
+        static vector< vector <int> > mutate_in(vector< vector <int> >);
+        static vector< vector <int> > mutate_out(vector< vector <int> >);
+    
         // static const
         static const int MODE_LOW_PERC = 0;
         static const int MODE_PERC = 1;

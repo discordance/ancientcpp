@@ -17,6 +17,7 @@
 		3F7039D315CC3B53002AC7BF /* ofxMidiIn.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3F7039BF15CC3B53002AC7BF /* ofxMidiIn.cpp */; };
 		3F7039D415CC3B53002AC7BF /* ofxMidiMessage.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3F7039C115CC3B53002AC7BF /* ofxMidiMessage.cpp */; };
 		3F7039D515CC3B53002AC7BF /* ofxMidiOut.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3F7039C315CC3B53002AC7BF /* ofxMidiOut.cpp */; };
+		3FCB4A0616188AE000672434 /* Gaia.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3FCB4A0516188AE000672434 /* Gaia.cpp */; };
 		3FD66BF015B1960C006CD7AC /* CoreMIDI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3FD66BEF15B1960C006CD7AC /* CoreMIDI.framework */; };
 		3FD66BF415B19AAE006CD7AC /* Seq.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3FD66BF215B19AAE006CD7AC /* Seq.cpp */; };
 		3FDC7B4A15E3DBB500688FAF /* ofxXmlSettings.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3FDC7B4315E3DBB500688FAF /* ofxXmlSettings.cpp */; };
@@ -98,6 +99,8 @@
 		3F7039C315CC3B53002AC7BF /* ofxMidiOut.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ofxMidiOut.cpp; sourceTree = "<group>"; };
 		3F7039C415CC3B53002AC7BF /* ofxMidiOut.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ofxMidiOut.h; sourceTree = "<group>"; };
 		3F7039C515CC3B53002AC7BF /* ofxMidiTypes.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ofxMidiTypes.h; sourceTree = "<group>"; };
+		3FCB4A0416188AE000672434 /* Gaia.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Gaia.h; sourceTree = "<group>"; };
+		3FCB4A0516188AE000672434 /* Gaia.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Gaia.cpp; sourceTree = "<group>"; };
 		3FD66BEF15B1960C006CD7AC /* CoreMIDI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreMIDI.framework; path = ../../../../../../../../System/Library/Frameworks/CoreMIDI.framework; sourceTree = "<group>"; };
 		3FD66BF215B19AAE006CD7AC /* Seq.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Seq.cpp; sourceTree = "<group>"; };
 		3FD66BF315B19AAE006CD7AC /* Seq.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Seq.h; sourceTree = "<group>"; };
@@ -404,6 +407,8 @@
 		E4B69E1C0A3A1BDC003C02F2 /* src */ = {
 			isa = PBXGroup;
 			children = (
+				3FCB4A0416188AE000672434 /* Gaia.h */,
+				3FCB4A0516188AE000672434 /* Gaia.cpp */,
 				E4B69E1D0A3A1BDC003C02F2 /* main.cpp */,
 				E4B69E1E0A3A1BDC003C02F2 /* testApp.cpp */,
 				E4B69E1F0A3A1BDC003C02F2 /* testApp.h */,
@@ -528,6 +533,7 @@
 				3FDC7B4B15E3DBB500688FAF /* tinyxml.cpp in Sources */,
 				3FDC7B4C15E3DBB500688FAF /* tinyxmlerror.cpp in Sources */,
 				3FDC7B4D15E3DBB500688FAF /* tinyxmlparser.cpp in Sources */,
+				3FCB4A0616188AE000672434 /* Gaia.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

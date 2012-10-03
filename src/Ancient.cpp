@@ -20,7 +20,7 @@ Ancient::Ancient()
     for(int i = 0; i < 8 ; i++)
     {
         Trak tr;
-        tr.set_vanilla(Trak::str_to_phr("00000000000000000000000000000000"));
+        tr.set_vanilla(Gaia::str_to_phr("00000000000000000000000000000000"));
         m_tracks.push_back(tr);
     }
     
@@ -29,12 +29,12 @@ Ancient::Ancient()
     m_tracks[0].set_vanilla(Trak::str_to_phr("f000f000f006f000f000f000f000f000"),Trak::MODE_LOW_PERC);
     m_tracks[1].set_vanilla(Trak::str_to_phr("05000f000f00006000000f000f000060"),Trak::MODE_SNARE);*/
     
-    m_tracks[0].set_vanilla(Trak::str_to_phr("f000f000f000f000"),Trak::MODE_LOW_PERC);
-    m_tracks[1].set_vanilla(Trak::str_to_phr("000000f00000"),Trak::MODE_SNARE);    
-    m_tracks[3].set_vanilla(Trak::str_to_phr("00f000f6f00f000f"),Trak::MODE_OVERHEAD);
-    //m_tracks[4].set_vanilla(Trak::str_to_phr("6989698969896989"),Trak::MODE_OVERHEAD);
+    m_tracks[0].set_vanilla(Gaia::str_to_phr("f000f000f000f000"),Trak::MODE_LOW_PERC);
+    m_tracks[1].set_vanilla(Gaia::str_to_phr("000000f000000F00"),Trak::MODE_SNARE);    
+    m_tracks[3].set_vanilla(Gaia::str_to_phr("00f000f6f00f000f"),Trak::MODE_OVERHEAD);
+    m_tracks[4].set_vanilla(Gaia::str_to_phr("6989698969896989"),Trak::MODE_OVERHEAD);
     //m_tracks[4].set_vanilla(Trak::str_to_phr("f00f5000f000f000"),Trak::MODE_OVERHEAD);
-    m_tracks[4].set_vanilla(Trak::str_to_phr("f0000000f0000f00"),Trak::MODE_OVERHEAD);
+    //m_tracks[4].set_vanilla(Trak::str_to_phr("f0000000f0000f00"),Trak::MODE_OVERHEAD);
     
     //ofLog(OF_LOG_NOTICE, ofToString(Trak::get_repetitiveness(m_tracks[0].get_current_vel())));
     //ofLog(OF_LOG_NOTICE, "mulo " + ofToString();
@@ -45,7 +45,8 @@ Ancient::Ancient()
     //Trak::generate_pure_randoms(16);
    // Trak::generate_cyclic_randoms(16);
    // den rpv syn, rep
-    Trak::ga(16,0.2,1,0.,0.5);
+
+    //Gaia::ga(16,0.4,0.8,0.1,0.5);
     
     // pitch map stuff
     static const int arr[] = {36,// kick
@@ -83,6 +84,12 @@ void Ancient::notify_bar()
             return;
         }
     }
+}
+
+void Ancient::ga_test()
+{
+    m_tasks.push_back("ga_test");
+    startThread();
 }
 
 void Ancient::set_xor_mode(bool mode)
@@ -149,7 +156,7 @@ void Ancient::threadedFunction()
         {
             string task = m_tasks[0];
             m_tasks.erase(m_tasks.begin());
-            
+
             // update variation for all tracks
             std::vector<Trak>::iterator track;
             for(track = m_tracks.begin(); track != m_tracks.end(); ++track) 
@@ -166,6 +173,12 @@ void Ancient::threadedFunction()
                 {
                     track->set_swing(m_swing);
                 }
+            }
+            
+            if(task == "ga_test")
+            {   
+                // den rpv syn, rep
+                Gaia::ga(16,0.2,0.95,0.1,0.5);
             }
             
             unlock();

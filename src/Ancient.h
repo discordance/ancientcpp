@@ -10,6 +10,7 @@
 
 #include <vector>
 #include "ofTypes.h"
+#include "Gaia.h"
 #include "Trak.h"
 class Seq; 
 #include "Seq.h"
@@ -28,6 +29,7 @@ class Ancient : public ofThread
         void assign_pitchmap(vector<int> pitchmap);
         void notify_bar(); // be informed that a bar is going on
         vector<Trak>* get_tracks();
+        void ga_test();
     
         bool m_auto_variation;
     

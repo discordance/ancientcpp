@@ -50,4 +50,5 @@ class testApp : public ofBaseApp{
         float m_view_xor_variation;
         bool  m_view_xor_mode;
         float m_view_jacc_variation;
+        map<string, bool> m_trigg;
 };

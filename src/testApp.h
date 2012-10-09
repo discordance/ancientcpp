@@ -50,5 +50,10 @@ class testApp : public ofBaseApp{
         float m_view_xor_variation;
         bool  m_view_xor_mode;
         float m_view_jacc_variation;
+        
+        // heuristics 
+        float m_rpv;    
+        float m_syn;
+        float m_rep;
         map<string, bool> m_trigg;
 };

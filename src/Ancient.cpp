@@ -15,6 +15,7 @@ Ancient::Ancient()
     m_xor_variation = 0.;
     m_xor_mode = false;
     m_jacc_variation = 0;
+    m_processing = false;
     
     // init eight tracks
     for(int i = 0; i < 8 ; i++)
@@ -30,9 +31,9 @@ Ancient::Ancient()
     m_tracks[1].set_vanilla(Trak::str_to_phr("05000f000f00006000000f000f000060"),Trak::MODE_SNARE);*/
     
     m_tracks[0].set_vanilla(Gaia::str_to_phr("f000f000f000f000"),Trak::MODE_LOW_PERC);
-    m_tracks[1].set_vanilla(Gaia::str_to_phr("000000f000000F00"),Trak::MODE_SNARE);    
+    m_tracks[1].set_vanilla(Gaia::str_to_phr("000000f000000f00"),Trak::MODE_SNARE);    
     m_tracks[3].set_vanilla(Gaia::str_to_phr("00f000f6f00f000f"),Trak::MODE_OVERHEAD);
-    m_tracks[4].set_vanilla(Gaia::str_to_phr("6989698969896989"),Trak::MODE_OVERHEAD);
+    m_tracks[4].set_vanilla(Gaia::str_to_phr("6989698969596989"),Trak::MODE_OVERHEAD);
     //m_tracks[4].set_vanilla(Trak::str_to_phr("f00f5000f000f000"),Trak::MODE_OVERHEAD);
     //m_tracks[4].set_vanilla(Trak::str_to_phr("f0000000f0000f00"),Trak::MODE_OVERHEAD);
     
@@ -40,7 +41,8 @@ Ancient::Ancient()
     //ofLog(OF_LOG_NOTICE, "mulo " + ofToString();
     
     //ofLog(OF_LOG_NOTICE, "testus : " + ofToString(Trak::euclidian_distance(m_tracks[0].get_current_vel(), m_tracks[1].get_current_vel())));
-    //ofLog(OF_LOG_NOTICE, "testus density : " + ofToString(Trak::get_density(m_tracks[0].get_current())));
+    vector<int> vel = m_tracks[4].get_current_vel();
+    //ofLog(OF_LOG_NOTICE, "testus lol : " + ofToString(Gaia::get_repetitiveness(vel)));
     
     //Trak::generate_pure_randoms(16);
    // Trak::generate_cyclic_randoms(16);
@@ -86,9 +88,18 @@ void Ancient::notify_bar()
     }
 }
 
-void Ancient::ga_test()
+void Ancient::ga(int track, float den, float rpv, float syn, float rep)
 {
-    m_tasks.push_back("ga_test");
+    //m_tasks.push_back("ga");
+    // get size
+    int size = m_tracks.at(track).get_size();
+    vector<float> stats;
+    stats.push_back((float)size);
+    stats.push_back(den);
+    stats.push_back(rpv);
+    stats.push_back(syn);
+    stats.push_back(rep);
+    m_ga_tasks[track] = stats;
     startThread();
 }
 
@@ -174,12 +185,23 @@ void Ancient::threadedFunction()
                     track->set_swing(m_swing);
                 }
             }
-            
-            if(task == "ga_test")
-            {   
-                // den rpv syn, rep
-                Gaia::ga(16,0.2,0.95,0.1,0.5);
+            //ga
+            if(m_ga_tasks.size())
+            {
+                
+                m_ga_tasks.erase(m_ga_tasks.begin());
+                vector<float> gas = m_ga_tasks.begin()->second;
+                int track = m_ga_tasks.begin()->first;
+                int size = (int)gas.at(0);
+                float den = gas.at(1);
+                float rpv = gas.at(2);
+                float syn = gas.at(3);
+                float rep = gas.at(4);
+                vector< vector<int> > res = Gaia::ga(size, den, rpv, syn, rep);
+                //m_tracks[track].set_vanilla(vector<Step> phr)*res.begin();
+                
             }
+
             
             unlock();
         }

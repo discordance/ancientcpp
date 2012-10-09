@@ -35,6 +35,7 @@ class Gaia {
         // converters
         static vector<Step> str_to_phr(string str);
         static vector<int> str_to_vel(string str);
+        static vector<Step> vel_to_phr(vector<int> ins);
         static string vel_to_str(vector<int> ins);
         static string phr_to_str(vector<Step> *phr);
         static vector<unsigned char> steps_to_bytes(vector<Step> *phr);

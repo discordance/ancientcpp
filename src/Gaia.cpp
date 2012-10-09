@@ -218,31 +218,42 @@ vector<int> Gaia::generate_cyclic_phr(int size, int bdiv, int cycle, int offset)
 }
 
 vector< vector<int> > Gaia::ga(int size, float den, float rpv, float syn, float rep)
-{
-    int gen_num = 10;
-    vector< vector<int> > pool = Gaia::generate_stochastic(size, 1024, den); // get some randoms
+{   
+    int total_gen = 8;
+    int gen_num = total_gen;
+    vector< vector<int> > pool = Gaia::generate_stochastic(size, 512, den); // get some randoms
     vector< vector<int> > cyclic_pool = Gaia::generate_cyclic(size, 512); // get cyclic randoms
     pool.insert(pool.end(), cyclic_pool.begin(), cyclic_pool.end()); // merge them
     std::map<float, vector<int> > generation;
+    int pop_size = pool.size();
     
     // first generation initiated.
     while(gen_num > 0)
     {
-        ofLog(OF_LOG_NOTICE, ofToString(gen_num) + " " + ofToString(generation.begin()->first));
+        if(total_gen > gen_num)
+        {
+            ofLog(OF_LOG_NOTICE, Gaia::vel_to_str(generation.begin()->second)+ " " +ofToString(gen_num) + " " 
+              + ofToString(generation.begin()->first) 
+              + " " 
+              + ofToString(pool.size())
+              + " " 
+              + ofToString(Gaia::get_repetitiveness(generation.begin()->second))
+              );
+        }   
         
         generation.clear();
         vector< vector<int> >::iterator phr;
         for(phr = pool.begin(); phr != pool.end(); ++phr)
         {
             float fit = Gaia::fitness_score(*phr,den,rpv,syn,rep);
-            generation[Gaia::fitness_score(*phr,den,rpv,syn,rep)] = *phr;
+            generation[fit] = *phr;
         }
         
         pool.clear(); // clear pool and re-use;
         std::map<float, vector<int> >::iterator gen;
         int group = 0;
-        vector<int> prev_phr = generation.begin()->second;
-        pool.push_back(generation.begin()->second);
+        vector<int> first_phr = generation.begin()->second;
+        //pool.push_back(generation.begin()->second);
         for(gen = generation.begin(); gen != generation.end(); ++gen)
         {
             int ct = std::distance(generation.begin(), gen) + 1;
@@ -251,12 +262,10 @@ vector< vector<int> > Gaia::ga(int size, float den, float rpv, float syn, float 
             switch (group)
             {
                 case 0:
-                    //pool.push_back(gen->second); // keep
+                    pool.push_back(gen->second); // keep
                     break;
                 case 1:
-                    //rnd = Gaia::generate_stochastic_phr(size, den);
-                    //pool.push_back(Gaia::mutate_phr(gen->second, rnd));
-                    pool.push_back(Gaia::mutate_phr(gen->second, prev_phr));
+                    pool.push_back(Gaia::mutate_phr(gen->second, first_phr));
                     break;
                   
                 case 2:
@@ -268,11 +277,11 @@ vector< vector<int> > Gaia::ga(int size, float den, float rpv, float syn, float 
                     pool.push_back(Gaia::generate_stochastic_phr(size, den));
                     break;
             }
-            if(ct % (int)floor(generation.size()/4.) == 0)
+            int modul = (int)floor(generation.size()/4.);
+            if(ct % modul == 0 && modul)
             {
                 ++group;
             }
-            prev_phr = gen->second;
         }
         
         // re-do genetics
@@ -685,8 +694,10 @@ float Gaia::get_repetitiveness(vector<int>& phr)
         {
             scores.push_back(Gaia::euclidian_distance(part, prev_part));
         }
-        prev_part = part;
-        
+        //else
+        //{
+           prev_part = part; 
+        //}
     }
     
     float avg_score = 0.;
@@ -695,7 +706,7 @@ float Gaia::get_repetitiveness(vector<int>& phr)
     {
         avg_score += *score;
     }
-    return avg_score / (float)scores.size();
+    return 1-(avg_score / (float)scores.size());
     
 }
 

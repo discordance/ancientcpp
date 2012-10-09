@@ -29,11 +29,12 @@ class Ancient : public ofThread
         void assign_pitchmap(vector<int> pitchmap);
         void notify_bar(); // be informed that a bar is going on
         vector<Trak>* get_tracks();
-        void ga_test();
+        void ga(int track, float den, float rpv, float syn, float rep);
     
         bool m_auto_variation;
     
     protected:
+        bool m_processing;
         vector<Trak> m_tracks;
         Seq *m_seq;
         float m_swing;
@@ -43,6 +44,8 @@ class Ancient : public ofThread
         
         // queue handling
         vector<string> m_tasks;
+        // GA
+        map<int, vector<float> > m_ga_tasks;
         
         // thread
         void threadedFunction();

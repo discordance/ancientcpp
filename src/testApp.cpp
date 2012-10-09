@@ -13,6 +13,10 @@ void testApp::setup()
     m_view_xor_mode = false;
     m_view_xor_variation =0.;    
     m_view_jacc_variation = 0.;
+    // heuristics 
+    m_rpv = 0.;    
+    m_syn = 0.;
+    m_rep = 0.;
     
     // INTERFACE
     float xInit = OFX_UI_GLOBAL_WIDGET_SPACING;
@@ -32,7 +36,7 @@ void testApp::setup()
     gui_g->addWidgetDown(new ofxUISpacer(48-xInit, 1)); 
     w = gui_g->addWidgetDown(new ofxUISlider(length-xInit,dim, -0.99, 0.99, m_view_swing, "swing")); 
     w->setColorBack(ofColor(255,128,0,128));
-    w = gui_g->addWidgetDown(new ofxUIToggle(dim*4, dim*4, m_view_auto_variation, "auto_variation")); 
+    w = gui_g->addWidgetDown(new ofxUIToggle(dim*3, dim*3, m_view_auto_variation, "auto_variation")); 
     w->setColorBack(ofColor(255,128,0,128));
     gui_g->addWidgetDown(new ofxUILabel("XOR VARIATOR ...........", OFX_UI_FONT_MEDIUM));
     gui_g->addWidgetDown(new ofxUISpacer(length-xInit, 1)); 
@@ -65,52 +69,36 @@ void testApp::setup()
     gui_d = new ofxUICanvas(ofGetWidth() - (length+xInit), 0, length+xInit, ofGetHeight());
     gui_d->addWidgetDown(new ofxUISpacer(length-xInit, 1));
     gui_d->addWidgetDown(new ofxUILabel("GROOVE ..........................", OFX_UI_FONT_MEDIUM));
-    gui_d->addWidgetDown(new ofxUILabel("GA .............................", OFX_UI_FONT_MEDIUM));
-    w = gui_d->addWidgetDown(new ofxUIButton(dim*4, dim*4, false, "ga_test"));
-    w->setColorBack(ofColor(255,128,0));
+    gui_d->addWidgetDown(new ofxUISpacer(length-xInit, 1));
+    gui_d->addWidgetDown(new ofxUILabel("GA .....................................", OFX_UI_FONT_MEDIUM));
+    w = gui_d->addWidgetDown(new ofxUISlider(length-xInit,dim*2, 0., 1., m_rpv, "rpv"));
+    w = gui_d->addWidgetDown(new ofxUISlider(length-xInit,dim*2, 0., 1., m_syn, "syn"));
+    w = gui_d->addWidgetDown(new ofxUISlider(length-xInit,dim*2, 0., 1., m_rep, "rep"));
+    //w = gui_d->addWidgetDown(new ofxUIButton(dim*4, dim*4, false, "generate"));
+    //w->setColorBack(ofColor(255,128,0));
     
     ofAddListener(gui_d->newGUIEvent,this,&testApp::gui_gEvent);
     
-    int tr_height = 80;
-    int tr_width = (ofGetWidth() - ((length+xInit)*2))- xInit*2;
-    int h_offset = 20;
+    int w_offset = 4;
+    int tr_height = ofGetHeight();
+    int trashed = 2 * (length+xInit);
+    int tr_width = (int)((ofGetWidth() - trashed)-(w_offset*8)) /8.; // @TODO a revoir moin defonced
     int ct = 0;
-    // tracks
-    /*
-    for(int i = 0 ; i < 1 ; ++i)
-    {
-        //ofPtr<ofxUICanvas> ptr(new ofxUICanvas(length+(xInit*2), (tr_height*i)+10, tr_width, tr_height));
-       ofxUICanvas * ptr = new ofxUICanvas(length+(xInit*2), ((tr_height+10)*i)+h_offset, tr_width, tr_height);
-       vector<ofxUISlider*> sliders;
-        
-       for(int j = 0 ; j < 16 ; ++j)
-       {
-           ofxUISlider *w;
-           if(j< 1)
-           {
-              w = (ofxUISlider*)ptr->addWidgetDown(new ofxUISlider(dim*3,tr_height*0.8, 0., 1., 0., ""));  
-           }
-           else
-           {
-              w = (ofxUISlider*)ptr->addWidgetRight(new ofxUISlider(dim*3,tr_height*0.8, 0., 1., 0., "")); 
-           }
-           if(j % 4 == 0)
-           {
-               w->setColorBack(ofColor(255,128,0,192));
-           }
-           else
-           {
-               w->setColorBack(ofColor(255,128,0,48));
-           }
-           sliders.push_back(w);
-           ct++;
-       }
-       gui_sliders.push_back(sliders); 
-       ptr->addWidgetRight(new ofxUISpacer(1, tr_height*0.8));
-
-    }
-    */
     
+    //m_ancient.ga(1, 0.5, 0.5, 0.5, 0.5);
+    // tracks
+    
+    for(int i = 0 ; i < 8 ; ++i)
+    {
+       ofxUIWidget *iw;
+       int x = (length+xInit+w_offset)+((w_offset+tr_width)*i); // @TODO a revoir moin defonced
+       ofxUICanvas * tr_gui = new ofxUICanvas(x, 0 , tr_width, tr_height);
+       iw = tr_gui->addWidgetDown(new ofxUIToggle(dim*3, dim*3, true, "mt"+ofToString(i)));
+       iw->setColorBack(ofColor(255, 0, 0)); 
+       iw = tr_gui->addWidgetDown(new ofxUIButton(dim*2, dim*2, false, "ga"+ofToString(i)));
+       iw->setColorBack(ofColor(255,128,0));
+       ofAddListener(tr_gui->newGUIEvent,this,&testApp::gui_gEvent);
+    }
 }
 
 void testApp::gui_gEvent(ofxUIEventArgs &e)
@@ -118,6 +106,7 @@ void testApp::gui_gEvent(ofxUIEventArgs &e)
     string name = e.widget->getName(); 
 	int kind = e.widget->getKind(); 
     
+    // trick to avoid double triggers
     if(!m_trigg[name])
     {
         m_trigg[name] = true;
@@ -206,9 +195,29 @@ void testApp::gui_gEvent(ofxUIEventArgs &e)
         m_view_jacc_slider->setValue(0.);
         m_ancient.set_jaccard_variation(0);
     }
-    else if(name == "ga_test")
-    {
-        m_ancient.ga_test();
+
+    string::iterator nmchar;
+    string res = "";
+    int tr;
+    for (nmchar = name.begin(); nmchar != name.end(); ++nmchar)
+    {		
+        res += *nmchar;
+        if(res == "ga")
+        {
+            stringstream ss;
+            string s;
+            ss << *name.rbegin();
+            ss >> s;
+            tr = ofToInt(s);
+        }
+        else if(res == "mt")
+        {
+            stringstream ss;
+            string s;
+            ss << *name.rbegin();
+            ss >> s;
+            tr = ofToInt(s); 
+        } 
     }
     
 }

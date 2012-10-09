@@ -38,29 +38,15 @@ class Trak {
         // public dump
         void dump_current_vel();
         void dump_vanilla_vel();
-        
-        
-    
-        // static const
-        static const int MODE_LOW_PERC = 0;
-        static const int MODE_PERC = 1;
-        static const int MODE_SNARE = 2;
-        static const int MODE_OVERHEAD = 3;
-        static const int MODE_FREE_MIND = 4;
-        static const int MODE_ONE_SHOT = 5;
-        static const int MODE_BASS_NOTE = 6;
-        static const int MODE_NOTE = 7;
-    
+  
         // 
         /*
          * 0 -> low perc (kicks), 
          * 1 -> perc, 
          * 2 -> snare, 
-         * 3 -> overhead(hh), 
-         * 4 -> free-mind,
+         * 3 -> hh, 
+         * 4 -> ovh,
          * 5 -> one shot, 
-         * 6 -> bass-note, 
-         * 7 -> note
          */
         int m_mode; 
         int m_pitch; // pitch of the current track
@@ -73,7 +59,7 @@ class Trak {
         
         // utilities
         void update_size();
-        float get_variation_rate();
+        //float get_variation_rate();
     
 };
 

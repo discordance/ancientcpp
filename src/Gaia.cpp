@@ -11,8 +11,9 @@
 //Gaia::Gaia(){} // no need only static here
 
 // init weights
-map<int, vector<int> > Gaia::syncopation_weights = Gaia::create_weights_map();
-map<int, int>          Gaia::syncopation_maxes = Gaia::create_maxes_map();
+map<int, vector<int> >   Gaia::syncopation_weights = Gaia::create_weights_map();
+map<int, int>            Gaia::syncopation_maxes = Gaia::create_maxes_map();
+map<int, vector<float> > Gaia::type_stats = Gaia::create_type_stats();
 //static utilities
 //--------------------------------------------------------------
 string Gaia::phr_to_str(vector<Step> *phr)
@@ -29,6 +30,25 @@ string Gaia::phr_to_str(vector<Step> *phr)
     }
     return res;
 }
+vector<Step> Gaia::vel_to_phr(vector<int> ins)
+{
+    vector<Step> res;
+    vector<int>::iterator vel;
+    for(vel = ins.begin(); vel != ins.end(); ++vel)
+    {
+        // create the step
+        Step st;
+        st.vel = *vel;
+        st.dur = 1;
+        st.lock = FALSE;
+        st.drift = 0;
+        st.ctrl = vector<float>(4,0.);
+        
+        res.push_back(st);
+    }
+    return res;
+}
+
 string Gaia::vel_to_str(vector<int> ins)
 {
     string res;
@@ -218,7 +238,8 @@ vector<int> Gaia::generate_cyclic_phr(int size, int bdiv, int cycle, int offset)
 }
 
 vector< vector<int> > Gaia::ga(int size, float den, float rpv, float syn, float rep)
-{   
+{
+    //ofLog(OF_LOG_NOTICE, ofToString(den) + " " + ofToString(rpv) + " " + ofToString(syn) + " " + ofToString(rep) + " <<<<");
     int total_gen = 8;
     int gen_num = total_gen;
     vector< vector<int> > pool = Gaia::generate_stochastic(size, 512, den); // get some randoms
@@ -230,17 +251,6 @@ vector< vector<int> > Gaia::ga(int size, float den, float rpv, float syn, float 
     // first generation initiated.
     while(gen_num > 0)
     {
-        if(total_gen > gen_num)
-        {
-            ofLog(OF_LOG_NOTICE, Gaia::vel_to_str(generation.begin()->second)+ " " +ofToString(gen_num) + " " 
-              + ofToString(generation.begin()->first) 
-              + " " 
-              + ofToString(pool.size())
-              + " " 
-              + ofToString(Gaia::get_repetitiveness(generation.begin()->second))
-              );
-        }   
-        
         generation.clear();
         vector< vector<int> >::iterator phr;
         for(phr = pool.begin(); phr != pool.end(); ++phr)
@@ -253,12 +263,11 @@ vector< vector<int> > Gaia::ga(int size, float den, float rpv, float syn, float 
         std::map<float, vector<int> >::iterator gen;
         int group = 0;
         vector<int> first_phr = generation.begin()->second;
-        //pool.push_back(generation.begin()->second);
+
         for(gen = generation.begin(); gen != generation.end(); ++gen)
         {
             int ct = std::distance(generation.begin(), gen) + 1;
             vector<int> rnd;
-            //ofLog(OF_LOG_NOTICE, ofToString(group) + " " + ofToString(ct));
             switch (group)
             {
                 case 0:
@@ -289,13 +298,35 @@ vector< vector<int> > Gaia::ga(int size, float den, float rpv, float syn, float 
         gen_num--;
     }
     
+    // re-ordering
     std::map<float, vector<int> >::iterator gen;
+    vector<int> winner = generation.begin()->second;
+    map<float, vector<int> > euclidian_ordered;
     for(gen = generation.begin(); gen != generation.end(); ++gen)
     {
-        //ofLog(OF_LOG_NOTICE, Gaia::vel_to_str(gen->second));
-        //ofLog(OF_LOG_NOTICE, ofToString(gen->first));
+        if(gen != generation.begin())
+        {
+            euclidian_ordered[Gaia::euclidian_distance(winner, gen->second)] = gen->second;
+        }
     }
     vector< vector<int> > res;
+    res.push_back(winner);
+    //ofLog(OF_LOG_NOTICE, Gaia::vel_to_str(winner));
+    float thres = 0.05;
+    for(gen = euclidian_ordered.begin(); gen != euclidian_ordered.end(); ++gen)
+    {
+        if(gen->first > thres)
+        {
+            //ofLog(OF_LOG_NOTICE, Gaia::vel_to_str(gen->second));
+            res.push_back(gen->second);
+            thres += 0.05;
+            if(thres >= 0.25)
+            {
+                break;
+            }
+        }
+    }
+    //ofLog(OF_LOG_NOTICE, ofToString(res.size()));
     return res;
 }
 
@@ -780,6 +811,52 @@ map <int,int> Gaia::create_maxes_map()
     {
         res[i] =  Gaia::get_max_syncopation(i);
     }
+    return res;
+}
+
+map<int, vector<float> > Gaia::create_type_stats()
+{
+    map<int, vector<float> > res;
+    for (int i = 0; i < 5; ++i)
+    {
+        vector<float> stats;
+        float vrate = 0.;
+        float den = 0.;
+        switch (i) {
+            case MODE_LOW_PERC:
+                vrate = 0.15;
+                den = 0.25;
+                break;
+            case MODE_PERC:
+                vrate = 0.45;
+                den = 0.15;
+                break;
+            case MODE_SNARE:
+                vrate = 0.35;
+                den = 0.125;
+                break;
+            case MODE_HITHAT:
+                vrate = 0.65;
+                den = 0.25;
+                break;
+            case MODE_OVERHEAD:
+                vrate = 0.65;
+                den = 0.5;
+                break;
+            case MODE_ONE_SHOT:
+                vrate = 0.8;
+                den = 0.07;
+                break;
+            default:
+                vrate = 0.5;
+                den = 0.5;
+                break;
+        }
+        stats.push_back(vrate);
+        stats.push_back(den);
+        res[i] = stats;
+    }
+    
     return res;
 }
 

@@ -13,11 +13,12 @@ void testApp::setup()
     m_view_xor_mode = false;
     m_view_xor_variation =0.;    
     m_view_jacc_variation = 0.;
-    // heuristics 
-    m_rpv = 0.;    
-    m_syn = 0.;
-    m_rep = 0.;
-    
+    // heuristics
+    m_den = 0.5;
+    m_rpv = 0.5;
+    m_syn = 0.2;
+    m_rep = 0.5;
+
     // INTERFACE
     float xInit = OFX_UI_GLOBAL_WIDGET_SPACING;
     float length = 190-xInit; 
@@ -71,6 +72,7 @@ void testApp::setup()
     gui_d->addWidgetDown(new ofxUILabel("GROOVE ..........................", OFX_UI_FONT_MEDIUM));
     gui_d->addWidgetDown(new ofxUISpacer(length-xInit, 1));
     gui_d->addWidgetDown(new ofxUILabel("GA .....................................", OFX_UI_FONT_MEDIUM));
+    w = gui_d->addWidgetDown(new ofxUISlider(length-xInit,dim*2, 0., 1., m_den, "den"));
     w = gui_d->addWidgetDown(new ofxUISlider(length-xInit,dim*2, 0., 1., m_rpv, "rpv"));
     w = gui_d->addWidgetDown(new ofxUISlider(length-xInit,dim*2, 0., 1., m_syn, "syn"));
     w = gui_d->addWidgetDown(new ofxUISlider(length-xInit,dim*2, 0., 1., m_rep, "rep"));
@@ -93,8 +95,16 @@ void testApp::setup()
        ofxUIWidget *iw;
        int x = (length+xInit+w_offset)+((w_offset+tr_width)*i); // @TODO a revoir moin defonced
        ofxUICanvas * tr_gui = new ofxUICanvas(x, 0 , tr_width, tr_height);
+        
+       // remind the x and w
+       vector<float> track_coords;
+       track_coords.push_back(x);
+       track_coords.push_back(tr_width);
+       m_track_ui_x_w[i] = track_coords;
+        
+       tr_gui->addWidgetDown(new ofxUILabel(ofToString(i), OFX_UI_FONT_MEDIUM));
        iw = tr_gui->addWidgetDown(new ofxUIToggle(dim*3, dim*3, true, "mt"+ofToString(i)));
-       iw->setColorBack(ofColor(255, 0, 0)); 
+       iw->setColorBack(ofColor(0, 0, 0));
        iw = tr_gui->addWidgetDown(new ofxUIButton(dim*2, dim*2, false, "ga"+ofToString(i)));
        iw->setColorBack(ofColor(255,128,0));
        ofAddListener(tr_gui->newGUIEvent,this,&testApp::gui_gEvent);
@@ -107,6 +117,7 @@ void testApp::gui_gEvent(ofxUIEventArgs &e)
 	int kind = e.widget->getKind(); 
     
     // trick to avoid double triggers
+    
     if(!m_trigg[name])
     {
         m_trigg[name] = true;
@@ -195,6 +206,26 @@ void testApp::gui_gEvent(ofxUIEventArgs &e)
         m_view_jacc_slider->setValue(0.);
         m_ancient.set_jaccard_variation(0);
     }
+    else if(name == "den")
+    {
+        ofxUISlider *slider = (ofxUISlider *) e.widget;
+        m_den = slider->getScaledValue();
+    }
+    else if(name == "rpv")
+    {
+        ofxUISlider *slider = (ofxUISlider *) e.widget;
+        m_rpv = slider->getScaledValue();
+    }
+    else if(name == "syn")
+    {
+        ofxUISlider *slider = (ofxUISlider *) e.widget;
+        m_syn = slider->getScaledValue();
+    }
+    else if(name == "rep")
+    {
+        ofxUISlider *slider = (ofxUISlider *) e.widget;
+        m_rep = slider->getScaledValue();
+    }
 
     string::iterator nmchar;
     string res = "";
@@ -209,6 +240,7 @@ void testApp::gui_gEvent(ofxUIEventArgs &e)
             ss << *name.rbegin();
             ss >> s;
             tr = ofToInt(s);
+            m_ancient.ga(tr, m_den, m_rpv, m_syn, m_rep);
         }
         else if(res == "mt")
         {
@@ -228,32 +260,10 @@ void testApp::update()
     if(ofGetFrameNum() % 8 == 0) // refresh slower
     {
         m_view_bpm = m_seq.get_bpm();
-       // update_sliders();
     }
     
 }
 
-void testApp::update_sliders()
-{
-    vector<Trak> * tracks = m_ancient.get_tracks();
-    std::vector<Trak>::iterator track;
-    for(track = tracks->begin(); track != tracks->end(); ++track) 
-    {
-        int cta = track - tracks->begin();
-        vector<Step> * steps;
-        steps = track->get_current();
-        std::vector<Step>::iterator step;
-        for(step = steps->begin(); step != steps->end(); ++step) 
-        {
-            
-            int ctb = step - steps->begin();
-            vector<ofxUISlider* > * sliders = &gui_sliders.at(cta);
-            ofxUISlider* slider = sliders->at(ctb);
-            slider->setValue(ofMap(step->vel, 0, 15, 0., 1.));
-            
-        }
-    }
-}
 
 //--------------------------------------------------------------
 void testApp::exit()
@@ -262,6 +272,22 @@ void testApp::exit()
     m_seq.exit();
 }
 
+void testApp::draw_track_dna(int track, float x, float w)
+{
+        vector<Trak> * tracks = m_ancient.get_tracks();
+        vector<Step> * steps;
+        steps = tracks->at(track).get_current();
+        std::vector<Step>::iterator step;
+        for(step = steps->begin(); step != steps->end(); ++step)
+        {
+            int ctb = step - steps->begin();
+            ofSetColor(255, ofMap(step->vel, 0, 15, 255, 0), 0);
+            ofFill();
+            int y = 100+(ctb*3);
+            ofRect(x, y, ofMap(step->vel, 0, 15, 0, w), 2);
+        }
+           
+}
 //--------------------------------------------------------------
 void testApp::draw(){
     
@@ -271,6 +297,18 @@ void testApp::draw(){
     
     // graphic background
     ofBackground(33, 33, 33);
+    
+    if(m_ancient.is_processing())
+    {
+        ofSetHexColor(0xff8000);
+        ofFill();
+        ofRect(156, 16, ofGetFrameNum() % 26, 6);
+    }
+    for(int i = 0; i < 8; ++i)
+    {
+        draw_track_dna(i, m_track_ui_x_w[i][0], m_track_ui_x_w[i][1]);
+    }
+    
 }
 
 //--------------------------------------------------------------

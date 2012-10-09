@@ -168,7 +168,8 @@ void Trak::set_xor_variation(float ratio, bool mode)
         {
             int ct = cbyte - cbytes.begin();
             unsigned char tbyte = *cbyte;
-            unsigned char varbyte = static_cast<unsigned char> (get_variation_rate()*ofRandom(rate));
+            float modifier = Gaia::type_stats.at(m_mode).at(0);
+            unsigned char varbyte = static_cast<unsigned char> (modifier*ofRandom(rate));
             
             if(mode) // full mode
             {
@@ -277,6 +278,7 @@ void Trak::update_size()
     // ....
 }
 
+/*
 float Trak::get_variation_rate()
 {
     switch (m_mode) {
@@ -288,24 +290,19 @@ float Trak::get_variation_rate()
             break; 
         case MODE_SNARE:
             return 0.35;
-            break; 
+            break;
+        case MODE_HITHAT:
+            return 0.65;
+            break;
         case MODE_OVERHEAD:
             return 0.65;
             break;
-        case MODE_FREE_MIND:
-            return 0.45;
-            break;    
         case MODE_ONE_SHOT:
             return 0.8;
-            break;
-        case MODE_BASS_NOTE:
-            return 0.1; // tbd
-            break;
-        case MODE_NOTE:
-            return 0.1; // tbd
             break;
         default:
             return 1.;
             break;
     }
 }
+ */

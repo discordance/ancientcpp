@@ -4,6 +4,8 @@
 #include "Seq.h"
 #include "Ancient.h"
 
+using namespace std;
+
 class testApp : public ofBaseApp{
 	public:
 		void setup();
@@ -38,7 +40,9 @@ class testApp : public ofBaseApp{
     protected:
     
         // 
-        void update_sliders();    
+        void update_sliders();
+        void draw_track_dna(int track, float x, float w);
+    
         // view elems
         ofxUISlider * m_view_xor_slider;
         ofxUISlider * m_view_jacc_slider;
@@ -50,10 +54,14 @@ class testApp : public ofBaseApp{
         float m_view_xor_variation;
         bool  m_view_xor_mode;
         float m_view_jacc_variation;
-        
-        // heuristics 
-        float m_rpv;    
+    
+        // heuristics
+        float m_den;
+        float m_rpv;
         float m_syn;
         float m_rep;
         map<string, bool> m_trigg;
+    
+        //ui
+        map<int, vector<float> > m_track_ui_x_w;
 };

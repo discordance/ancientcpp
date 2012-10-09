@@ -26,11 +26,12 @@ class Ancient : public ofThread
         void set_xor_variation(float ratio);
         void set_xor_mode(bool mode);
         void set_jaccard_variation(float thres);
+        bool is_processing();
         void assign_pitchmap(vector<int> pitchmap);
         void notify_bar(); // be informed that a bar is going on
         vector<Trak>* get_tracks();
         void ga(int track, float den, float rpv, float syn, float rep);
-    
+        
         bool m_auto_variation;
     
     protected:
@@ -41,6 +42,7 @@ class Ancient : public ofThread
         float m_xor_variation;
         bool  m_xor_mode;
         float m_jacc_variation;
+
         
         // queue handling
         vector<string> m_tasks;

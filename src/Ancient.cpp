@@ -30,10 +30,10 @@ Ancient::Ancient()
     m_tracks[0].set_vanilla(Trak::str_to_phr("f000f000f006f000f000f000f000f000"),Trak::MODE_LOW_PERC);
     m_tracks[1].set_vanilla(Trak::str_to_phr("05000f000f00006000000f000f000060"),Trak::MODE_SNARE);*/
     
-    m_tracks[0].set_vanilla(Gaia::str_to_phr("f000f000f000f000"),Trak::MODE_LOW_PERC);
-    m_tracks[1].set_vanilla(Gaia::str_to_phr("000000f000000f00"),Trak::MODE_SNARE);    
-    m_tracks[3].set_vanilla(Gaia::str_to_phr("00f000f6f00f000f"),Trak::MODE_OVERHEAD);
-    m_tracks[4].set_vanilla(Gaia::str_to_phr("6989698969596989"),Trak::MODE_OVERHEAD);
+    m_tracks[0].set_vanilla(Gaia::str_to_phr("f000f000f000f000"),Gaia::MODE_LOW_PERC);
+    m_tracks[1].set_vanilla(Gaia::str_to_phr("000000f000000f00"),Gaia::MODE_SNARE);    
+    m_tracks[3].set_vanilla(Gaia::str_to_phr("00f000f6f00f000f"),Gaia::MODE_HITHAT);
+    m_tracks[4].set_vanilla(Gaia::str_to_phr("6989698969596989"),Gaia::MODE_OVERHEAD);
     //m_tracks[4].set_vanilla(Trak::str_to_phr("f00f5000f000f000"),Trak::MODE_OVERHEAD);
     //m_tracks[4].set_vanilla(Trak::str_to_phr("f0000000f0000f00"),Trak::MODE_OVERHEAD);
     
@@ -70,6 +70,11 @@ vector<Trak>* Ancient::get_tracks()
     return &m_tracks;
 }
 
+bool Ancient::is_processing()
+{
+    return m_processing;
+}
+
 void Ancient::notify_bar()
 {
     if(m_auto_variation)
@@ -90,7 +95,6 @@ void Ancient::notify_bar()
 
 void Ancient::ga(int track, float den, float rpv, float syn, float rep)
 {
-    //m_tasks.push_back("ga");
     // get size
     int size = m_tracks.at(track).get_size();
     vector<float> stats;
@@ -161,35 +165,38 @@ void Ancient::assign_pitchmap(vector<int> pitchmap)
 //--------------------------
 void Ancient::threadedFunction()
 {
-    while( isThreadRunning() != 0 && m_tasks.size() != 0)
+    while( isThreadRunning() != 0 )
     {
+        m_processing = true;
         if( lock() )
         {
-            string task = m_tasks[0];
-            m_tasks.erase(m_tasks.begin());
-
-            // update variation for all tracks
-            std::vector<Trak>::iterator track;
-            for(track = m_tracks.begin(); track != m_tracks.end(); ++track) 
+            if(m_tasks.size())
             {
-                if(task == "jacc_var")
-                {    
-                    track->set_jaccard_variation(m_jacc_variation);
-                }
-                else if(task == "xor_var")
+                string task = m_tasks[0];
+                m_tasks.erase(m_tasks.begin());
+
+                // update variation for all tracks
+                std::vector<Trak>::iterator track;
+                for(track = m_tracks.begin(); track != m_tracks.end(); ++track) 
                 {
-                    track->set_xor_variation(m_xor_variation, m_xor_mode);
-                }
-                else if(task == "swing")
-                {
-                    track->set_swing(m_swing);
+                    if(task == "jacc_var")
+                    {    
+                        track->set_jaccard_variation(m_jacc_variation);
+                    }
+                    else if(task == "xor_var")
+                    {
+                        track->set_xor_variation(m_xor_variation, m_xor_mode);
+                    }
+                    else if(task == "swing")
+                    {
+                        track->set_swing(m_swing);
+                    }
                 }
             }
+  
             //ga
             if(m_ga_tasks.size())
             {
-                
-                m_ga_tasks.erase(m_ga_tasks.begin());
                 vector<float> gas = m_ga_tasks.begin()->second;
                 int track = m_ga_tasks.begin()->first;
                 int size = (int)gas.at(0);
@@ -197,17 +204,16 @@ void Ancient::threadedFunction()
                 float rpv = gas.at(2);
                 float syn = gas.at(3);
                 float rep = gas.at(4);
+                m_ga_tasks.erase(m_ga_tasks.begin());
                 vector< vector<int> > res = Gaia::ga(size, den, rpv, syn, rep);
-                //m_tracks[track].set_vanilla(vector<Step> phr)*res.begin();
+                m_tracks[track].set_vanilla(Gaia::vel_to_phr(*res.begin()));
                 
             }
-
-            
             unlock();
         }
+        m_seq->update_drum_tracks(&m_tracks);
+        m_processing = false;
+        stopThread();
     } 
-    
-    m_seq->update_drum_tracks(&m_tracks);
-    stopThread();
 }
     

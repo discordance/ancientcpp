@@ -25,9 +25,18 @@ class Gaia {
         Gaia();
         ~Gaia();
         
+        // modes
+        static const int MODE_LOW_PERC = 0;
+        static const int MODE_PERC = 1;
+        static const int MODE_SNARE = 2;
+        static const int MODE_HITHAT = 3;
+        static const int MODE_OVERHEAD = 4;
+        static const int MODE_ONE_SHOT = 5;
+        
         // lookup tables
-        static map<int, vector<int> > syncopation_weights;
-        static map<int, int> syncopation_maxes;
+        static std::map<int, vector<int> > syncopation_weights;
+        static std::map<int, int> syncopation_maxes;
+        static std::map<int, vector<float> > type_stats;
         
         /**** utilities ****/
         // dump
@@ -78,10 +87,12 @@ class Gaia {
         
         // utils syncopation
         static vector<int> get_syncopation_weights(int size);
-        static map<int, vector<int> > create_weights_map();
         inline static int get_syncopation_score(vector<int>& phr, vector<int>& weights);
         static int get_max_syncopation(int size);
+    
+        static map<int, vector<int> > create_weights_map();
         static map<int, int> create_maxes_map();
+        static map<int, vector<float> > create_type_stats();
     
         // utils GA
         inline static float fitness_score(vector<int>& phr, float den, float rpv, float syn, float rep);

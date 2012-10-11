@@ -145,18 +145,22 @@ void Ancient::set_seq(Seq *seq)
     m_seq->update_drum_tracks(&m_tracks);
 }
 
+int Ancient::get_track_pitch(int track)
+{
+    return m_tracks.at(track).get_pitch();
+}
 
 // protected --------------------------------------
 void Ancient::assign_pitchmap(vector<int> pitchmap)
 {
     if(m_tracks.size())
     {
-        for(vector<Trak>::iterator it = m_tracks.begin(); it != m_tracks.end(); ++it)
+        for(vector<Trak>::iterator track = m_tracks.begin(); track != m_tracks.end(); ++track)
         {
-            int ct = it - m_tracks.begin();
+            int ct = track - m_tracks.begin();
             if(pitchmap.size()-1 >= ct)
             {
-                it->m_pitch = pitchmap[ct];
+                track->set_pitch(pitchmap[ct]);
             }
         }
     }   

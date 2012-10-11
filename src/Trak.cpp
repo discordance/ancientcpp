@@ -42,6 +42,16 @@ void Trak::set_vanilla(vector<Step> phr)
     set_size(phr.size());
 }
 
+void Trak::set_pitch(int pitch)
+{
+    m_pitch = pitch;
+}
+
+int Trak::get_pitch()
+{
+    return m_pitch;
+}
+
 void Trak::set_vanilla(vector<Step> phr, int mode = -1)
 {
     m_vanilla = phr;

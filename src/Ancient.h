@@ -27,6 +27,7 @@ class Ancient : public ofThread
         void set_xor_mode(bool mode);
         void set_jaccard_variation(float thres);
         bool is_processing();
+        int get_track_pitch(int track);
         void assign_pitchmap(vector<int> pitchmap);
         void notify_bar(); // be informed that a bar is going on
         vector<Trak>* get_tracks();

@@ -4,27 +4,31 @@
 void testApp::setup()
 {
     // init framerate
-    ofSetFrameRate(30);
+    ofSetFrameRate(32);
+    
+    // init
     m_ancient.set_seq(&m_seq);
     m_view_bpm = 120;
-    m_view_midi_delay = 4;
+    m_view_midi_delay = 0;
     m_view_swing = 0.;
     m_view_auto_variation = false;
     m_view_xor_mode = false;
     m_view_xor_variation =0.;    
     m_view_jacc_variation = 0.;
+    
     // heuristics
     m_den = 0.5;
     m_rpv = 0.5;
     m_syn = 0.2;
     m_rep = 0.5;
-
+    
     // INTERFACE
     float xInit = OFX_UI_GLOBAL_WIDGET_SPACING;
     float length = 190-xInit; 
     float dim = 6;
     ofxUIWidget *w;
     
+    // gui left
     gui_g = new ofxUICanvas(0, 0, length+xInit, ofGetHeight());
     gui_g->addWidgetDown(new ofxUILabel("ANCIENT SEQ :::::::", OFX_UI_FONT_LARGE));  
     gui_g->addWidgetDown(new ofxUISpacer(length-xInit, 1));
@@ -66,7 +70,7 @@ void testApp::setup()
     
     ofAddListener(gui_g->newGUIEvent,this,&testApp::gui_gEvent);
     
-    // widgets d
+     // gui right
     gui_d = new ofxUICanvas(ofGetWidth() - (length+xInit), 0, length+xInit, ofGetHeight());
     gui_d->addWidgetDown(new ofxUISpacer(length-xInit, 1));
     gui_d->addWidgetDown(new ofxUILabel("GROOVE ..........................", OFX_UI_FONT_MEDIUM));
@@ -104,7 +108,9 @@ void testApp::setup()
         
        tr_gui->addWidgetDown(new ofxUILabel(ofToString(i), OFX_UI_FONT_MEDIUM));
        iw = tr_gui->addWidgetDown(new ofxUIToggle(dim*3, dim*3, true, "mt"+ofToString(i)));
-       iw->setColorBack(ofColor(0, 0, 0));
+       iw->setColorBack(ofColor(255, 0, 0));
+       iw->setColorFill(ofColor(48, 0, 0));
+       iw->setColorFillHighlight(ofColor(128, 0, 0));
        iw = tr_gui->addWidgetDown(new ofxUIButton(dim*2, dim*2, false, "ga"+ofToString(i)));
        iw->setColorBack(ofColor(255,128,0));
        ofAddListener(tr_gui->newGUIEvent,this,&testApp::gui_gEvent);
@@ -117,17 +123,20 @@ void testApp::gui_gEvent(ofxUIEventArgs &e)
 	int kind = e.widget->getKind(); 
     
     // trick to avoid double triggers
-    
-    if(!m_trigg[name])
+    // execpt for toggles;
+    if(OFX_UI_WIDGET_TOGGLE != kind)
     {
-        m_trigg[name] = true;
+        if(!m_trigg[name])
+        {
+            m_trigg[name] = true;
+        }
+        else
+        {
+            m_trigg[name] = false;
+            return;
+        }
     }
-    else
-    {
-        m_trigg[name] = false;
-        return;
-    }
-    
+        
     if(name == "live_midi_delay")
 	{
 		ofxUISlider *slider = (ofxUISlider *) e.widget; 
@@ -248,7 +257,10 @@ void testApp::gui_gEvent(ofxUIEventArgs &e)
             string s;
             ss << *name.rbegin();
             ss >> s;
-            tr = ofToInt(s); 
+            tr = ofToInt(s);
+            ofxUIToggle *butt = (ofxUIToggle *) e.widget;
+            bool mute = !butt->getValue();
+            m_seq.toggle_mute(tr, mute);
         } 
     }
     

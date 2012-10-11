@@ -33,8 +33,9 @@ class Trak {
         void set_xor_variation(float ratio, bool mode);
         void set_jaccard_variation(float thres);
         void set_euclidian_variation(float thres);
-    
+        void set_pitch(int pitch);
         int  get_size();
+        int  get_pitch();
         // public dump
         void dump_current_vel();
         void dump_vanilla_vel();
@@ -49,9 +50,9 @@ class Trak {
          * 5 -> one shot, 
          */
         int m_mode; 
-        int m_pitch; // pitch of the current track
         
     protected:
+        int m_pitch; // pitch of the current track
         int m_size; // max steps in the Trak
         vector<Step> m_current; // current form of the track after lot of transforms
         vector<Step> m_vanilla; // original form of the track that is written

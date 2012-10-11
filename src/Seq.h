@@ -9,6 +9,7 @@
 #define SEQ
 
 #include <vector>
+#include <map>
 #include "ofxMidi.h"
 #include "utils/ofLog.h"
 #include "utils/ofUtils.h"
@@ -28,27 +29,34 @@ class Seq : public ofxMidiListener, public ofThread
         void exit();
         void update_drum_tracks(vector<Trak> *tracks);
         void set_ancient(Ancient * anc);
+        void toggle_mute(int track, bool status);
     
     protected:
         // evt
         struct Evt 
         {
+            int track; // origin track
             int status; // note on or off
             int channel; // channel
-            int pitch;
-            int vel;
+            int pitch; // pitch mapped
+            int vel; // velocity
         };
     
         void newMidiMessage(ofxMidiMessage& eventArgs);
         void reset_events();
         void send_events(vector<Evt> *evts);
         void kill_events(int chan);
+        void kill_events(int chan, int pitch);
+        void correct_and_update(map<int, vector<int> >& evt_map, int track, int pitch);
         
         // midi
         ofxMidiIn	m_midiIn;
         ofxMidiOut  m_virtual_midiOut; // for internal routing
         ofxMidiOut  m_hard_midiOut; // for hardware routing
         ofxMidiMessage m_midiMessage;
+        
+        // mutes
+        map<int, bool> m_mutes;
         
         // ancient to notify timing
         Ancient *m_ancient;

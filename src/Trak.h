@@ -30,6 +30,7 @@ class Trak {
     
         void set_size(int size);
         void set_swing(float swg);
+        void set_beat_groove(vector<float> drifts);
         void set_xor_variation(float ratio, bool mode);
         void set_jaccard_variation(float thres);
         void set_euclidian_variation(float thres);

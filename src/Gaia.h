@@ -53,6 +53,7 @@ class Gaia {
         
         // swing
         static void swing_phr(vector<Step> *phr, float swing);
+        static void beat_groove_phr(vector<Step> *phr, vector<float> drifts);
         
         // variators
         static vector<int> jaccard_variation(vector<Step> *phr, float thres);

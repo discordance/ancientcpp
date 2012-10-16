@@ -232,6 +232,14 @@ void Trak::set_swing(float swg)
     Gaia::swing_phr(&m_current,swg);
 }
 
+void Trak::set_beat_groove(vector<float> drifts)
+{
+    // vanilla
+    Gaia::beat_groove_phr(&m_vanilla, drifts);
+    // current
+    Gaia::beat_groove_phr(&m_current, drifts);
+}
+
 int Trak::get_size()
 {
     return m_size;

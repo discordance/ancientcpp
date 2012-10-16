@@ -44,6 +44,7 @@ class Seq : public ofxMidiListener, public ofThread
     
         void newMidiMessage(ofxMidiMessage& eventArgs);
         void reset_events();
+        void add_event(int start, int end, int track, int pitch, int vel);
         void send_events(vector<Evt> *evts);
         void kill_events(int chan);
         void kill_events(int chan, int pitch);

@@ -33,7 +33,7 @@ Ancient::Ancient()
     m_tracks[0].set_vanilla(Gaia::str_to_phr("f000f000f000f000"),Gaia::MODE_LOW_PERC);
     m_tracks[1].set_vanilla(Gaia::str_to_phr("000000f000000f00"),Gaia::MODE_SNARE);    
     m_tracks[3].set_vanilla(Gaia::str_to_phr("00f000f6f00f000f"),Gaia::MODE_HITHAT);
-    m_tracks[4].set_vanilla(Gaia::str_to_phr("6989698969596989"),Gaia::MODE_OVERHEAD);
+    m_tracks[4].set_vanilla(Gaia::str_to_phr("f6f6f6f6f6f6f6f6"),Gaia::MODE_OVERHEAD);
     //m_tracks[4].set_vanilla(Trak::str_to_phr("f00f5000f000f000"),Trak::MODE_OVERHEAD);
     //m_tracks[4].set_vanilla(Trak::str_to_phr("f0000000f0000f00"),Trak::MODE_OVERHEAD);
     

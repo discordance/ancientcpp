@@ -106,6 +106,23 @@ vector<Step> Gaia::str_to_phr(string str)
     return res;
 }
 
+void Gaia::beat_groove_phr(vector<Step> *phr, vector<float> drifts)
+{
+    if(phr->size()) // check
+    {
+        // iterate
+        vector<Step>::iterator step;
+        for(step = phr->begin(); step != phr->end(); ++step)
+        {
+            int ct = step - phr->begin();
+            if(ct % 2 != 0)
+            {
+                step->drift = drifts.at(ct%4);
+            }
+        }
+    }
+}
+
 // swing this phrase
 void Gaia::swing_phr(vector<Step> *phr, float swing)
 {

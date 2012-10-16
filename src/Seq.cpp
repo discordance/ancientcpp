@@ -87,6 +87,7 @@ void Seq::update_drum_tracks(vector<Trak> *tracks) // v1, replace all
      * V2
      *
      ***/
+    
     if(lock())
     {
         reset_events();
@@ -96,6 +97,7 @@ void Seq::update_drum_tracks(vector<Trak> *tracks) // v1, replace all
         {
             // track num
             int tr_num = track - tracks->begin();
+            
             // get current
             vector<Step>* current = track->get_current();
             int ps = current->size(); // phrase size
@@ -106,6 +108,7 @@ void Seq::update_drum_tracks(vector<Trak> *tracks) // v1, replace all
             {
                 int modi=i%ps;
                 Step cstep = current->at(modi);
+                
                 if(cstep.vel)
                 {
                     vector<int> evt;
@@ -114,19 +117,22 @@ void Seq::update_drum_tracks(vector<Trak> *tracks) // v1, replace all
                     int drift = mult*(1+cstep.drift) - mult;
                     cstick += drift;
                     int cetick = cstick + t_dur;
-                    cetick += drift;
+                    //cetick += drift;
                     int vel = ofMap(cstep.vel, 0, 15, 0, 127);
                     evt.push_back(cstick);
                     evt.push_back(cetick);
                     evt.push_back(vel);
                     evts[i] = evt;
+                    ofLog(OF_LOG_NOTICE,"st "+ofToString(cstick)+" p "+ofToString(track->get_pitch()));
                 }
                 else
                 {
                     evts[i] = vector<int>(0);
                 }
+                
             }
             // correct the overlaping events and update
+            correct_and_update(evts,tr_num,track->get_pitch());
         }
         unlock();
     }
@@ -188,47 +194,60 @@ void Seq::update_drum_tracks(vector<Trak> *tracks) // v1, replace all
         }
         unlock();
     } 
-    */ 
+    */
 }
 
 //--------------------------------------------------------------
 
 void Seq::correct_and_update(map<int, vector<int> >& evt_map, int track, int pitch)
 {
-    vector<int>* n_p;
-    vector<int>* n_c;
-    vector<int>* n_n; // fuck pointers
+    
+    vector<int> *n_p = NULL;
+    vector<int> *n_c = NULL;
     map<int, vector<int> >::iterator curr;
-    map<int, vector<int> >::iterator prev;
-    map<int, vector<int> >::iterator next;
+    map<int, vector<int> >::iterator last = evt_map.end();
+    --last;
     for(curr = evt_map.begin(); curr != evt_map.end(); curr++)
     {
         n_c = &curr->second;
-        
-        if(curr != evt_map.begin())
+        int key = curr->first;
+  
+        if(curr != evt_map.begin() && (&evt_map.at(key-1))->size())
         {
-            prev--;
-            n_p = &prev->second;
+            n_p = &evt_map.at(key-1);
         };
-        if(curr != evt_map.end())
+
+        if(n_p != NULL)
         {
-            next++;
-            n_n = &next->second;
-        };
-        if(n_p->size() && n_c->size())
-        {
-            if(n_p->at(1) >= n_c->at(0))
+            if(n_c->size())
             {
-                //n_p->insert(<#iterator __position#>, <#const value_type &__x#>)
-                int *trg = &n_p->at(1);
-                trg = &n_c->at(0);
+                if(n_p->at(1) >= n_c->at(0))
+                {
+                    n_p->at(1) = n_c->at(0)-1;
+                }
+                add_event(n_p->at(0), n_p->at(1), track, pitch, n_p->at(2));
             }
-        };
+            if(curr == last)
+            {
+                add_event(n_p->at(0), n_p->at(1), track, pitch, n_p->at(2));
+            }
+        }
+        else
+        {
+            if(n_c->size() && curr == last)
+            {
+                if(n_c->at(1) >= m_max_ticks)
+                {
+                    n_c->at(1) = m_max_ticks - 1;
+                }
+                add_event(n_c->at(0), n_c->at(1), track, pitch, n_c->at(2));
+            }
+        }
     }
 }
 
 void Seq::reset_events()
-{   
+{
         if(m_events.size())
         {
             m_events.clear();
@@ -308,6 +327,35 @@ void Seq::kill_events(int chan)
 void Seq::kill_events(int chan, int pitch)
 {
     m_virtual_midiOut.sendNoteOff(chan, pitch ,0);
+}
+
+void Seq::add_event(int start, int end, int track, int pitch, int vel)
+{
+    /*
+    if(!track)
+    {
+        ofLog(OF_LOG_NOTICE, ofToString(start)+" "+ofToString(end));
+    }
+     */
+    
+    Evt on;
+    on.track = track;
+    on.status = 1; // note on on channel 10
+    on.channel = 10;
+    on.pitch = pitch;
+    on.vel = vel;
+    
+    Evt off;
+    off.track = track;
+    off.status = 0; // note off on channel 10
+    off.channel = 10;
+    off.pitch = pitch;
+    off.vel = vel;
+    
+    vector<Evt>* event_line_on = &m_events.at(start);
+    event_line_on->push_back(on);
+    vector<Evt>* event_line_off = &m_events.at(end);
+    event_line_off->push_back(off);
 }
 
 void Seq::send_events(vector<Evt>* evts)

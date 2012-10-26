@@ -54,6 +54,7 @@ class testApp : public ofBaseApp{
         float m_view_xor_variation;
         bool  m_view_xor_mode;
         float m_view_jacc_variation;
+        vector<float> m_view_groove;
     
         // heuristics
         float m_den;

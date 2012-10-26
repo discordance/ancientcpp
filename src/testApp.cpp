@@ -16,10 +16,16 @@ void testApp::setup()
     m_view_xor_variation =0.;    
     m_view_jacc_variation = 0.;
     
+    // init grooves
+    for(int g = 0; g < 4; ++g)
+    {
+        m_view_groove.push_back(0.);
+    }
+    
     // heuristics
-    m_den = 0.5;
-    m_rpv = 0.5;
-    m_syn = 0.2;
+    m_den = 0.25;
+    m_rpv = 0.9;
+    m_syn = 0.1;
     m_rep = 0.5;
     
     // INTERFACE
@@ -73,16 +79,25 @@ void testApp::setup()
      // gui right
     gui_d = new ofxUICanvas(ofGetWidth() - (length+xInit), 0, length+xInit, ofGetHeight());
     gui_d->addWidgetDown(new ofxUISpacer(length-xInit, 1));
-    gui_d->addWidgetDown(new ofxUILabel("GROOVE ..........................", OFX_UI_FONT_MEDIUM));
-    gui_d->addWidgetDown(new ofxUISpacer(length-xInit, 1));
     gui_d->addWidgetDown(new ofxUILabel("GA .....................................", OFX_UI_FONT_MEDIUM));
     w = gui_d->addWidgetDown(new ofxUISlider(length-xInit,dim*2, 0., 1., m_den, "den"));
+    w->setColorBack(ofColor(128,255,0,128));
     w = gui_d->addWidgetDown(new ofxUISlider(length-xInit,dim*2, 0., 1., m_rpv, "rpv"));
+    w->setColorBack(ofColor(128,255,0,128));
     w = gui_d->addWidgetDown(new ofxUISlider(length-xInit,dim*2, 0., 1., m_syn, "syn"));
+    w->setColorBack(ofColor(128,255,0,128));
     w = gui_d->addWidgetDown(new ofxUISlider(length-xInit,dim*2, 0., 1., m_rep, "rep"));
-    //w = gui_d->addWidgetDown(new ofxUIButton(dim*4, dim*4, false, "generate"));
-    //w->setColorBack(ofColor(255,128,0));
-    
+    w->setColorBack(ofColor(128,255,0,128));
+    gui_d->addWidgetDown(new ofxUILabel("GROOVE ..........................", OFX_UI_FONT_MEDIUM));
+    gui_d->addWidgetDown(new ofxUISpacer(length-xInit, 1));
+    w = gui_d->addWidgetDown(new ofxUISlider(dim*3, dim*8, -0.99, 0.99, m_view_groove.at(0), "g0"));
+    w->setColorBack(ofColor(255,128,0,128));
+    w = gui_d->addWidgetRight(new ofxUISlider(dim*3, dim*8, -0.99, 0.99, m_view_groove.at(1), "g1"));
+    w->setColorBack(ofColor(255,128,0,128));
+    w = gui_d->addWidgetRight(new ofxUISlider(dim*3, dim*8, -0.99, 0.99, m_view_groove.at(2), "g2"));
+    w->setColorBack(ofColor(255,128,0,128));
+    w = gui_d->addWidgetRight(new ofxUISlider(dim*3, dim*8, -0.99, 0.99, m_view_groove.at(3), "g3"));
+    w->setColorBack(ofColor(255,128,0,128));
     ofAddListener(gui_d->newGUIEvent,this,&testApp::gui_gEvent);
     
     int w_offset = 4;
@@ -215,6 +230,8 @@ void testApp::gui_gEvent(ofxUIEventArgs &e)
         m_view_jacc_slider->setValue(0.);
         m_ancient.set_jaccard_variation(0);
     }
+    
+    // heuristics
     else if(name == "den")
     {
         ofxUISlider *slider = (ofxUISlider *) e.widget;
@@ -234,6 +251,32 @@ void testApp::gui_gEvent(ofxUIEventArgs &e)
     {
         ofxUISlider *slider = (ofxUISlider *) e.widget;
         m_rep = slider->getScaledValue();
+    }
+    
+    // grooves
+    else if(name == "g0")
+    {
+        ofxUISlider *slider = (ofxUISlider *) e.widget;
+        m_view_groove.at(0) = slider->getScaledValue();
+        m_ancient.set_groove(m_view_groove);
+    }
+    else if(name == "g1")
+    {
+        ofxUISlider *slider = (ofxUISlider *) e.widget;
+        m_view_groove.at(1) = slider->getScaledValue();
+        m_ancient.set_groove(m_view_groove);
+    }
+    else if(name == "g2")
+    {
+        ofxUISlider *slider = (ofxUISlider *) e.widget;
+        m_view_groove.at(2) = slider->getScaledValue();
+        m_ancient.set_groove(m_view_groove);
+    }
+    else if(name == "g3")
+    {
+        ofxUISlider *slider = (ofxUISlider *) e.widget;
+        m_view_groove.at(3) = slider->getScaledValue();
+        m_ancient.set_groove(m_view_groove);
     }
 
     string::iterator nmchar;

@@ -11,18 +11,29 @@
 //--------------------------------------------------------------
 Trak::Trak(int mode, int size){
     
-    // mode
+    // init mode
     m_mode = mode;
     if(mode > 6 || mode < 0)
     {
         m_mode = 0;
     }
     
-    // sets the size
-    set_size(size);
+    // init groove
+    for(int g = 0; g < 4; ++g)
+    {
+        m_groove.push_back(0.);
+    }
     
+    // init levels and variat
+    m_level = 2;
+    m_variat = 0;
+    
+    // init pitch
+    m_pitch = 0;
+    
+    vector<Step> zero_phr;
     // init current
-    for(int i=0; i < m_size; ++i)
+    for(int i=0; i < size; ++i)
     {
         Step st;
         st.vel = 0;
@@ -30,16 +41,33 @@ Trak::Trak(int mode, int size){
         st.lock = FALSE;
         st.ctrl = vector<float>(4,0.);
         st.drift = 0.0;
-        m_vanilla.push_back(st);
+        zero_phr.push_back(st);
     }
-    m_current = m_vanilla; // copy current to vanilla @TODO best way or matrix 2x0 ?
+    // init the matrix
+    for (int m = 0; m < 5; ++m)
+    {
+        vector< vector<Step> > line;
+        m_matrix.push_back(line);
+        for (int n = 0; n < 5; ++n)
+        {
+            m_matrix.at(m).push_back(zero_phr);
+        }
+    }
+    m_vanilla = &m_matrix.at(2).at(0); // update vanilla pointer
+    m_current = *m_vanilla; // copy vanilla to current;
+    
+    // update and check the size
+    set_size(size);
 }
 
 // accessors
 void Trak::set_vanilla(vector<Step> phr)
 {
-    m_vanilla = phr;
+    m_matrix.at(2).at(0) = phr;
+    m_vanilla = &m_matrix.at(2).at(0);
     set_size(phr.size());
+    update_groove();
+    update_current();
 }
 
 void Trak::set_pitch(int pitch)
@@ -54,19 +82,23 @@ int Trak::get_pitch()
 
 void Trak::set_vanilla(vector<Step> phr, int mode = -1)
 {
-    m_vanilla = phr;
+    m_matrix.at(2).at(0) = phr;
+    m_vanilla = &m_matrix.at(2).at(0);
     set_size(phr.size());
     if(mode >= 0)
     {
         m_mode = mode;
     }
+    update_groove();
+    update_current();
 }
 
 bool Trak::has_events()
 {
+    // get the current level / variat
     vector<Step>::iterator step;
     // iterate
-    for(step = m_vanilla.begin(); step != m_vanilla.end(); ++step)
+    for(step = m_current.begin(); step != m_current.end(); ++step)
     {
         if(step->vel)
         {
@@ -104,7 +136,7 @@ void Trak::set_size(int size)
         m_size = 16;
     }
     
-    // updates the size
+    // updates the size/the groove
     update_size();
 }
 
@@ -128,7 +160,7 @@ void Trak::set_jaccard_variation(float thres)
     }
     if(thres > 0.)
     {
-        vector<int> vari = Gaia::jaccard_variation(&m_vanilla, thres);
+        vector<int> vari = Gaia::jaccard_variation(&*m_vanilla, thres);
         vector<int>::iterator vel;
         // iterate
         for(vel = vari.begin(); vel != vari.end(); ++vel)
@@ -139,8 +171,7 @@ void Trak::set_jaccard_variation(float thres)
     }
     else
     {
-        // reset vanilla
-        m_current = m_vanilla;
+        update_current();
     }
 }
 
@@ -158,19 +189,24 @@ void Trak::set_xor_variation(float ratio, bool mode)
     if(ratio > 0)
     {
         // cannot do partial var on 4 squav phrases
-        if(m_vanilla.size() <= 4){ mode = 1;}
+        if(m_size <= 4){ mode = 1;}
         
         // we take the quarter of the phrase
-        int vlengh = ofNextPow2(m_vanilla.size()/4)/2;
+        int div = 4;
+        
+        if((m_size/2)%div){
+            --div;
+        }
+        int vlengh = (m_size/div)/2;
         // we roll a dice to make a start or ending var
         int voffset = 0;
-        if(ofRandom(0, 2) > 1)
+        if(ofRandom(0, 2) > 1.)
         {
-            int voffset = (m_vanilla.size()/2) - vlengh;
+            voffset = (m_size/2) - vlengh;
         }    
         
         unsigned char rate = (unsigned char)ofMap(ratio, 0, 1, 0, 255); // ok valid
-        vector<unsigned char> cbytes = Gaia::steps_to_bytes(&m_vanilla);
+        vector<unsigned char> cbytes = Gaia::steps_to_bytes(&get_matrix_target());
         vector<unsigned char> rbytes;
         vector<unsigned char>::iterator cbyte;
         // iterate
@@ -202,7 +238,7 @@ void Trak::set_xor_variation(float ratio, bool mode)
         for(vel = res_vels.begin(); vel != res_vels.end(); ++vel)
         {
             Step *cstep = &m_current.at(vel - res_vels.begin());
-            Step *vstep = &m_vanilla.at(vel - res_vels.begin());
+            Step *vstep = &get_matrix_target().at(vel - res_vels.begin());
             
             if(Gaia::get_vel_group(*vel) != Gaia::get_vel_group(vstep->vel))
             {
@@ -216,8 +252,7 @@ void Trak::set_xor_variation(float ratio, bool mode)
     }
     else
     {
-        // reset vanilla
-        m_current = m_vanilla;
+        update_current();
     }
 }
 
@@ -226,18 +261,31 @@ void Trak::set_xor_variation(float ratio, bool mode)
  */
 void Trak::set_swing(float swg)
 {
-    // vanilla
-    Gaia::swing_phr(&m_vanilla,swg);
-    // current
-    Gaia::swing_phr(&m_current,swg);
+    // check
+    if(swg >= 1){ swg = 0.99; }
+    if(swg <= -1){ swg = -0.99; }
+    vector<float> groove;
+    for(int i = 0; i < 4 ; ++i)
+    {
+        if(i % 2 != 0)
+        {
+           groove.push_back(swg);
+        }
+        else
+        {
+            groove.push_back(0);
+        }
+    }
+    m_groove = groove;
+    update_groove();
+    update_current();
 }
 
 void Trak::set_beat_groove(vector<float> drifts)
 {
-    // vanilla
-    Gaia::beat_groove_phr(&m_vanilla, drifts);
-    // current
-    Gaia::beat_groove_phr(&m_current, drifts);
+    m_groove = drifts;
+    update_groove();
+    update_current();
 }
 
 int Trak::get_size()
@@ -253,7 +301,7 @@ void Trak::dump_current_vel()
 
 void Trak::dump_vanilla_vel()
 {
-    Gaia::dump_vel(&m_vanilla);
+    Gaia::dump_vel(&*m_vanilla);
 }
 
 
@@ -261,66 +309,68 @@ void Trak::dump_vanilla_vel()
 //protected
 
 //--------------------------------------------------------------
+
+vector<Step>& Trak::get_matrix_target()
+{
+    return m_matrix.at(m_level).at(m_variat);
+}
+
+void Trak::update_current()
+{
+    m_current = m_matrix.at(m_level).at(m_variat);
+}
 /**
- * Impact on Vanilla
+ * Impact on matrix
  */
 void Trak::update_size()
 {
     //updates the size of the current and matrix to fit with the new size
-    
-    // current phrase and vanilla
-    if(m_vanilla.size()) // check if init
-    {
-        if(m_vanilla.size() > m_size)
-        {
-            m_vanilla.resize(m_size);// data lost here : TODO non destructive
-        }
-        if(m_vanilla.size() < m_size)
-        {
-            //add empty steps
-            for(int i = 0; i < m_size - m_vanilla.size(); ++i)
-            {
-                Step st;
-                st.vel = 0;
-                st.dur = 1;
-                st.lock = FALSE;
-                st.ctrl = vector<float>(4,0.);
-                m_vanilla.push_back(st);
-            }
-        }  
-        m_current = m_vanilla;
-    }
-    
-    
     // resize matrix
-    // ....
+    vector < vector< vector<Step> > >::iterator level;
+    for(level = m_matrix.begin(); level != m_matrix.end(); ++level)
+    {
+        vector< vector<Step> >::iterator variat;
+        for(variat = level->begin(); variat != level->end(); ++variat)
+        {
+            if(variat->size() > m_size)
+            {
+                variat->resize(m_size); // data lost here : TODO non destructive
+            }
+            if(variat->size() < m_size)
+            {
+                //add empty steps
+                for(int i = 0; i < m_size - variat->size(); ++i)
+                {
+                    Step st;
+                    st.vel = 0;
+                    st.dur = 1;
+                    st.lock = FALSE;
+                    st.ctrl = vector<float>(4,0.);
+                    variat->push_back(st);
+                }
+            }
+        }
+    }
 }
 
-/*
-float Trak::get_variation_rate()
+/**
+ * Impact on matrix
+ */
+void Trak::update_groove()
 {
-    switch (m_mode) {
-        case MODE_LOW_PERC:
-            return 0.15;
-            break;
-        case MODE_PERC:
-            return 0.45;
-            break; 
-        case MODE_SNARE:
-            return 0.35;
-            break;
-        case MODE_HITHAT:
-            return 0.65;
-            break;
-        case MODE_OVERHEAD:
-            return 0.65;
-            break;
-        case MODE_ONE_SHOT:
-            return 0.8;
-            break;
-        default:
-            return 1.;
-            break;
+    // update matrix
+    vector < vector< vector<Step> > >::iterator level;
+    for(level = m_matrix.begin(); level != m_matrix.end(); ++level)
+    {
+        vector< vector<Step> >::iterator variat;
+        for(variat = level->begin(); variat != level->end(); ++variat)
+        {
+            vector<Step>::iterator step;
+            for(step = variat->begin(); step != variat->end(); ++step)
+            {
+                int ct = step - variat->begin();
+                step->drift = m_groove.at(ct%m_groove.size());
+            }
+        }
     }
 }
- */

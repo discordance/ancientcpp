@@ -23,6 +23,7 @@ class Ancient : public ofThread
         Ancient();
         void set_seq(Seq *seq);
         void set_swing(float swg);
+        void set_groove(vector<float> groove);
         void set_xor_variation(float ratio);
         void set_xor_mode(bool mode);
         void set_jaccard_variation(float thres);
@@ -40,6 +41,7 @@ class Ancient : public ofThread
         vector<Trak> m_tracks;
         Seq *m_seq;
         float m_swing;
+        vector<float> m_groove;
         float m_xor_variation;
         bool  m_xor_mode;
         float m_jacc_variation;

@@ -106,45 +106,6 @@ vector<Step> Gaia::str_to_phr(string str)
     return res;
 }
 
-void Gaia::beat_groove_phr(vector<Step> *phr, vector<float> drifts)
-{
-    if(phr->size()) // check
-    {
-        // iterate
-        vector<Step>::iterator step;
-        for(step = phr->begin(); step != phr->end(); ++step)
-        {
-            int ct = step - phr->begin();
-            if(ct % 2 != 0)
-            {
-                step->drift = drifts.at(ct%4);
-            }
-        }
-    }
-}
-
-// swing this phrase
-void Gaia::swing_phr(vector<Step> *phr, float swing)
-{
-    // check
-    if(swing >= 1){ swing = 0.99; }
-    if(swing <= -1){ swing = -0.99; }
-    // 
-    if(phr->size()) // check
-    {
-        // iterate
-        vector<Step>::iterator step;
-        for(step = phr->begin(); step != phr->end(); ++step)
-        {
-            int ct = step - phr->begin();
-            if(ct % 2 != 0)
-            {
-                step->drift = swing; 
-            }
-        }
-    }    
-}
-
 vector<int> Gaia::euclidian_variation(vector<Step> *phr, float thres)
 {
     int generation = 0;
@@ -259,8 +220,8 @@ vector< vector<int> > Gaia::ga(int size, float den, float rpv, float syn, float 
     //ofLog(OF_LOG_NOTICE, ofToString(den) + " " + ofToString(rpv) + " " + ofToString(syn) + " " + ofToString(rep) + " <<<<");
     int total_gen = 8;
     int gen_num = total_gen;
-    vector< vector<int> > pool = Gaia::generate_stochastic(size, 512, den); // get some randoms
-    vector< vector<int> > cyclic_pool = Gaia::generate_cyclic(size, 512); // get cyclic randoms
+    vector< vector<int> > pool = Gaia::generate_stochastic(size, 128, den); // get some randoms
+    vector< vector<int> > cyclic_pool = Gaia::generate_cyclic(size, 128); // get cyclic randoms
     pool.insert(pool.end(), cyclic_pool.begin(), cyclic_pool.end()); // merge them
     std::map<float, vector<int> > generation;
     int pop_size = pool.size();
@@ -317,6 +278,7 @@ vector< vector<int> > Gaia::ga(int size, float den, float rpv, float syn, float 
     
     // re-ordering
     std::map<float, vector<int> >::iterator gen;
+    ofLog(OF_LOG_NOTICE, "winner:"+ofToString(generation.begin()->first));
     vector<int> winner = generation.begin()->second;
     map<float, vector<int> > euclidian_ordered;
     for(gen = generation.begin(); gen != generation.end(); ++gen)
@@ -334,7 +296,6 @@ vector< vector<int> > Gaia::ga(int size, float den, float rpv, float syn, float 
     {
         if(gen->first > thres)
         {
-            //ofLog(OF_LOG_NOTICE, Gaia::vel_to_str(gen->second));
             res.push_back(gen->second);
             thres += 0.05;
             if(thres >= 0.25)

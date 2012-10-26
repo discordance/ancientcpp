@@ -21,34 +21,8 @@ Ancient::Ancient()
     for(int i = 0; i < 8 ; i++)
     {
         Trak tr;
-        tr.set_vanilla(Gaia::str_to_phr("00000000000000000000000000000000"));
         m_tracks.push_back(tr);
     }
-    
-    // test set
-    /*
-    m_tracks[0].set_vanilla(Trak::str_to_phr("f000f000f006f000f000f000f000f000"),Trak::MODE_LOW_PERC);
-    m_tracks[1].set_vanilla(Trak::str_to_phr("05000f000f00006000000f000f000060"),Trak::MODE_SNARE);*/
-    
-    m_tracks[0].set_vanilla(Gaia::str_to_phr("f000f000f000f000"),Gaia::MODE_LOW_PERC);
-    m_tracks[1].set_vanilla(Gaia::str_to_phr("000000f000000f00"),Gaia::MODE_SNARE);    
-    m_tracks[3].set_vanilla(Gaia::str_to_phr("00f000f6f00f000f"),Gaia::MODE_HITHAT);
-    m_tracks[4].set_vanilla(Gaia::str_to_phr("f6f6f6f6f6f6f6f6"),Gaia::MODE_OVERHEAD);
-    //m_tracks[4].set_vanilla(Trak::str_to_phr("f00f5000f000f000"),Trak::MODE_OVERHEAD);
-    //m_tracks[4].set_vanilla(Trak::str_to_phr("f0000000f0000f00"),Trak::MODE_OVERHEAD);
-    
-    //ofLog(OF_LOG_NOTICE, ofToString(Trak::get_repetitiveness(m_tracks[0].get_current_vel())));
-    //ofLog(OF_LOG_NOTICE, "mulo " + ofToString();
-    
-    //ofLog(OF_LOG_NOTICE, "testus : " + ofToString(Trak::euclidian_distance(m_tracks[0].get_current_vel(), m_tracks[1].get_current_vel())));
-    vector<int> vel = m_tracks[4].get_current_vel();
-    //ofLog(OF_LOG_NOTICE, "testus lol : " + ofToString(Gaia::get_repetitiveness(vel)));
-    
-    //Trak::generate_pure_randoms(16);
-   // Trak::generate_cyclic_randoms(16);
-   // den rpv syn, rep
-
-    //Gaia::ga(16,0.4,0.8,0.1,0.5);
     
     // pitch map stuff
     static const int arr[] = {36,// kick
@@ -137,6 +111,12 @@ void Ancient::set_swing(float swg)
     m_tasks.push_back("swing");
     startThread();
 }
+void Ancient::set_groove(vector<float> groove)
+{
+    m_groove = groove;
+    m_tasks.push_back("groove");
+    startThread();
+}
 
 void Ancient::set_seq(Seq *seq)
 {
@@ -194,6 +174,10 @@ void Ancient::threadedFunction()
                     else if(task == "swing")
                     {
                         track->set_swing(m_swing);
+                    }
+                    else if(task == "groove")
+                    {
+                        track->set_beat_groove(m_groove);
                     }
                 }
             }

@@ -123,7 +123,6 @@ void Seq::update_drum_tracks(vector<Trak> *tracks) // v1, replace all
                     evt.push_back(cetick);
                     evt.push_back(vel);
                     evts[i] = evt;
-                    ofLog(OF_LOG_NOTICE,"st "+ofToString(cstick)+" p "+ofToString(track->get_pitch()));
                 }
                 else
                 {
@@ -201,7 +200,7 @@ void Seq::update_drum_tracks(vector<Trak> *tracks) // v1, replace all
 
 void Seq::correct_and_update(map<int, vector<int> >& evt_map, int track, int pitch)
 {
-    
+    ofLog(OF_LOG_NOTICE, "start correct");
     vector<int> *n_p = NULL;
     vector<int> *n_c = NULL;
     map<int, vector<int> >::iterator curr;
@@ -244,6 +243,7 @@ void Seq::correct_and_update(map<int, vector<int> >& evt_map, int track, int pit
             }
         }
     }
+    ofLog(OF_LOG_NOTICE, "end correct");
 }
 
 void Seq::reset_events()

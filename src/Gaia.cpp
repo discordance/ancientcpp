@@ -299,7 +299,7 @@ vector< vector<int> > Gaia::ga(int size, float den, float rpv, float syn, float 
     
     // re-ordering
     std::map<float, vector<int> >::iterator gen;
-    ofLog(OF_LOG_NOTICE, "winner: "+ofToString(generation.begin()->first));
+    //ofLog(OF_LOG_NOTICE, "winner: "+ofToString(generation.begin()->first));
     vector<int> winner = generation.begin()->second;
     map<float, vector<int> > euclidian_ordered;
     for(gen = generation.begin(); gen != generation.end(); ++gen)
@@ -355,7 +355,7 @@ float Gaia::fitness_score(vector<int>& phr, float den, float rpv, float syn, flo
 {
     float den_dist, rpv_dist, syn_dist, rep_dist = 0.;
     den_dist = abs(Gaia::get_density(phr)-den);
-    //rpv_dist = abs(Gaia::get_repetitiveness(phr)-rpv);
+    rpv_dist = abs(Gaia::get_repetitiveness(phr)-rpv);
     syn_dist = abs(Gaia::get_syncopation(phr)-syn);
     rep_dist = abs(Gaia::get_repartition(phr)-rep);
     return (den_dist
@@ -834,34 +834,42 @@ map<int, vector<float> > Gaia::create_type_stats()
             case MODE_LOW_PERC:
                 vrate = 0.15;
                 den = 0.25;
+                den_dev = 0.05;
                 break;
             case MODE_PERC:
                 vrate = 0.45;
                 den = 0.15;
+                den_dev = 0.15;
                 break;
             case MODE_SNARE:
                 vrate = 0.35;
                 den = 0.125;
+                den_dev = 0.15;
                 break;
             case MODE_HITHAT:
                 vrate = 0.65;
                 den = 0.25;
+                den_dev = 0.3;
                 break;
             case MODE_OVERHEAD:
                 vrate = 0.65;
                 den = 0.5;
+                den_dev = 0.2;
                 break;
             case MODE_ONE_SHOT:
                 vrate = 0.8;
                 den = 0.07;
+                den_dev = 0.2;
                 break;
             default:
                 vrate = 0.5;
                 den = 0.5;
+                den_dev = 0.3;
                 break;
         }
         stats.push_back(vrate);
         stats.push_back(den);
+        stats.push_back(den_dev);
         res[i] = stats;
     }
     

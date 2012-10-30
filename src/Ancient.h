@@ -31,6 +31,7 @@ class Ancient : public ofThread
         bool is_processing();
         int get_track_pitch(int track);
         void assign_pitchmap(vector<int> pitchmap);
+        void assign_typemap(vector<int> typemap);
         void notify_bar(); // be informed that a bar is going on
         vector<Trak>* get_tracks();
         void ga(int track, float den, float rpv, float syn, float rep);

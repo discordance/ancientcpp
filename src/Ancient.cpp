@@ -27,7 +27,7 @@ Ancient::Ancient()
     }
     
     // pitch map stuff
-    static const int arr[] = {36,// kick
+    static const int parr[] = {36,// kick
                               38,// snare1
                               40,// snare2
                               42,// chh
@@ -36,9 +36,22 @@ Ancient::Ancient()
                               48,// perc2
                               49 // crash
                               };
-    vector<int> pitchmap (arr, arr + sizeof(arr) / sizeof(arr[0]) );
+    vector<int> pitchmap (parr, parr + sizeof(parr) / sizeof(parr[0]) );
     assign_pitchmap(pitchmap);
     
+    // type map stuff
+    static const int tarr[] = {
+        Gaia::MODE_LOW_PERC,// kick
+        Gaia::MODE_SNARE,// snare1
+        Gaia::MODE_SNARE,// snare2
+        Gaia::MODE_HITHAT,// chh
+        Gaia::MODE_OVERHEAD,// ohh
+        Gaia::MODE_PERC,// perc3
+        Gaia::MODE_PERC,// perc2
+        Gaia::MODE_ONE_SHOT // crash
+    };
+    vector<int> typemap (tarr, tarr + sizeof(tarr) / sizeof(tarr[0]) );
+    assign_typemap(typemap);
 }
 
 vector<Trak>* Ancient::get_tracks()
@@ -156,6 +169,21 @@ void Ancient::assign_pitchmap(vector<int> pitchmap)
     }   
 }
 
+void Ancient::assign_typemap(vector<int> typemap)
+{
+    if(m_tracks.size())
+    {
+        for(vector<Trak>::iterator track = m_tracks.begin(); track != m_tracks.end(); ++track)
+        {
+            int ct = track - m_tracks.begin();
+            if(typemap.size()-1 >= ct)
+            {
+                track->m_mode = typemap[ct];
+            }
+        }
+    }
+}
+
 //--------------------------
 void Ancient::threadedFunction()
 {
@@ -207,15 +235,12 @@ void Ancient::threadedFunction()
                 float syn = gas.at(3);
                 float rep = gas.at(4);
                 m_ga_tasks.erase(m_ga_tasks.begin());
-                /*
-                vector< vector<int> > res = Gaia::ga(size, den, rpv, syn, rep);
-                m_tracks[track].set_vanilla(Gaia::vel_to_phr(*res.begin()));
-                */
+                int mode = m_tracks[track].m_mode;
                 // create the matrix
                 vector< vector < vector<Step> > > matrix;
                 for(int i = 0; i < 5; ++i)
                 {
-                    float curr_den = ofMap(i, 0, 4, ofClamp(den-0.2, 0.05, 1.), ofClamp(den+0.2, 0.05, 1.));
+                    float curr_den = ofMap(i, 0, 4, ofClamp(den-Gaia::type_stats.at(mode).at(2), 0.05, 1.), ofClamp(den+Gaia::type_stats.at(mode).at(2), 0.05, 1.));
                     if(i == 2)
                     {
                         curr_den = den;

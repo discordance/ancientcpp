@@ -28,6 +28,10 @@ void testApp::setup()
     m_syn = 0.1;
     m_rep = 0.5;
     
+    // variation
+    m_level = 2;
+    m_variation = 0;
+    
     // INTERFACE
     float xInit = OFX_UI_GLOBAL_WIDGET_SPACING;
     float length = 190-xInit; 
@@ -36,7 +40,7 @@ void testApp::setup()
     
     // gui left
     gui_g = new ofxUICanvas(0, 0, length+xInit, ofGetHeight());
-    gui_g->addWidgetDown(new ofxUILabel("ANCIENT SEQ :::::::", OFX_UI_FONT_LARGE));  
+    gui_g->addWidgetDown(new ofxUILabel("ANCIENT SEQ ::::::", OFX_UI_FONT_LARGE));  
     gui_g->addWidgetDown(new ofxUISpacer(length-xInit, 1));
     gui_g->addWidgetDown(new ofxUILabel("TRANSPORT .................", OFX_UI_FONT_MEDIUM));
     gui_g->addWidgetDown(new ofxUISpacer(length-xInit, 1));
@@ -49,7 +53,7 @@ void testApp::setup()
     w->setColorBack(ofColor(255,128,0,128));
     w = gui_g->addWidgetDown(new ofxUIToggle(dim*3, dim*3, m_view_auto_variation, "auto_variation")); 
     w->setColorBack(ofColor(255,128,0,128));
-    gui_g->addWidgetDown(new ofxUILabel("XOR VARIATOR ...........", OFX_UI_FONT_MEDIUM));
+    gui_g->addWidgetDown(new ofxUILabel("XOR VARIATOR ..........", OFX_UI_FONT_MEDIUM));
     gui_g->addWidgetDown(new ofxUISpacer(length-xInit, 1)); 
     m_view_xor_slider = (ofxUISlider *) gui_g->addWidgetDown(new ofxUISlider(length-xInit,dim*2, 0., 1., m_view_xor_variation, "xor_variation"));  
     m_view_xor_slider->setColorBack(ofColor(255,128,0,128));
@@ -79,25 +83,23 @@ void testApp::setup()
      // gui right
     gui_d = new ofxUICanvas(ofGetWidth() - (length+xInit), 0, length+xInit, ofGetHeight());
     gui_d->addWidgetDown(new ofxUISpacer(length-xInit, 1));
-    gui_d->addWidgetDown(new ofxUILabel("GA .....................................", OFX_UI_FONT_MEDIUM));
+    gui_d->addWidgetDown(new ofxUILabel("GA ....................................", OFX_UI_FONT_MEDIUM));
     w = gui_d->addWidgetDown(new ofxUISlider(length-xInit,dim*2, 0., 1., m_den, "den"));
-    w->setColorBack(ofColor(128,255,0,128));
+    w->setColorBack(ofColor(128,128,128,128));
     w = gui_d->addWidgetDown(new ofxUISlider(length-xInit,dim*2, 0., 1., m_rpv, "rpv"));
-    w->setColorBack(ofColor(128,255,0,128));
+    w->setColorBack(ofColor(128,128,128,128));
     w = gui_d->addWidgetDown(new ofxUISlider(length-xInit,dim*2, 0., 1., m_syn, "syn"));
-    w->setColorBack(ofColor(128,255,0,128));
+    w->setColorBack(ofColor(128,128,128,128));
     w = gui_d->addWidgetDown(new ofxUISlider(length-xInit,dim*2, 0., 1., m_rep, "rep"));
-    w->setColorBack(ofColor(128,255,0,128));
-    gui_d->addWidgetDown(new ofxUILabel("GROOVE ..........................", OFX_UI_FONT_MEDIUM));
+    w->setColorBack(ofColor(128,128,128,128));
+    
+    gui_d->addWidgetDown(new ofxUILabel("EVOLVE .........................", OFX_UI_FONT_MEDIUM));
     gui_d->addWidgetDown(new ofxUISpacer(length-xInit, 1));
-    w = gui_d->addWidgetDown(new ofxUISlider(dim*3, dim*8, -0.99, 0.99, m_view_groove.at(0), "g0"));
-    w->setColorBack(ofColor(255,128,0,128));
-    w = gui_d->addWidgetRight(new ofxUISlider(dim*3, dim*8, -0.99, 0.99, m_view_groove.at(1), "g1"));
-    w->setColorBack(ofColor(255,128,0,128));
-    w = gui_d->addWidgetRight(new ofxUISlider(dim*3, dim*8, -0.99, 0.99, m_view_groove.at(2), "g2"));
-    w->setColorBack(ofColor(255,128,0,128));
-    w = gui_d->addWidgetRight(new ofxUISlider(dim*3, dim*8, -0.99, 0.99, m_view_groove.at(3), "g3"));
-    w->setColorBack(ofColor(255,128,0,128));
+    w = gui_d->addWidgetDown(new ofxUISlider(length-xInit,dim*2, 0, 4, m_level, "level"));
+    w->setColorBack(ofColor(255,32,0,128));
+    w = gui_d->addWidgetDown(new ofxUISlider(length-xInit,dim*2, 0, 4, m_variation, "variation"));
+    w->setColorBack(ofColor(255,32,0,128));
+     
     ofAddListener(gui_d->newGUIEvent,this,&testApp::gui_gEvent);
     
     int w_offset = 4;
@@ -122,7 +124,7 @@ void testApp::setup()
        m_track_ui_x_w[i] = track_coords;
         
        tr_gui->addWidgetDown(new ofxUILabel(ofToString(i), OFX_UI_FONT_MEDIUM));
-       iw = tr_gui->addWidgetDown(new ofxUIToggle(dim*3, dim*3, true, "mt"+ofToString(i)));
+       iw = tr_gui->addWidgetDown(new ofxUIToggle(dim*4, dim*4, true, "mt"+ofToString(i)));
        iw->setColorBack(ofColor(255, 0, 0));
        iw->setColorFill(ofColor(48, 0, 0));
        iw->setColorFillHighlight(ofColor(128, 0, 0));
@@ -252,31 +254,18 @@ void testApp::gui_gEvent(ofxUIEventArgs &e)
         ofxUISlider *slider = (ofxUISlider *) e.widget;
         m_rep = slider->getScaledValue();
     }
-    
-    // grooves
-    else if(name == "g0")
+    // evolve
+    else if(name == "level")
     {
         ofxUISlider *slider = (ofxUISlider *) e.widget;
-        m_view_groove.at(0) = slider->getScaledValue();
-        m_ancient.set_groove(m_view_groove);
+        m_level = slider->getScaledValue();
+        m_ancient.set_level_variat(m_level, m_variation);
     }
-    else if(name == "g1")
+    else if(name == "variation")
     {
         ofxUISlider *slider = (ofxUISlider *) e.widget;
-        m_view_groove.at(1) = slider->getScaledValue();
-        m_ancient.set_groove(m_view_groove);
-    }
-    else if(name == "g2")
-    {
-        ofxUISlider *slider = (ofxUISlider *) e.widget;
-        m_view_groove.at(2) = slider->getScaledValue();
-        m_ancient.set_groove(m_view_groove);
-    }
-    else if(name == "g3")
-    {
-        ofxUISlider *slider = (ofxUISlider *) e.widget;
-        m_view_groove.at(3) = slider->getScaledValue();
-        m_ancient.set_groove(m_view_groove);
+        m_variation = slider->getScaledValue();
+        m_ancient.set_level_variat(m_level, m_variation);
     }
 
     string::iterator nmchar;
@@ -329,18 +318,38 @@ void testApp::exit()
 
 void testApp::draw_track_dna(int track, float x, float w)
 {
-        vector<Trak> * tracks = m_ancient.get_tracks();
-        vector<Step> * steps;
-        steps = tracks->at(track).get_current();
-        std::vector<Step>::iterator step;
-        for(step = steps->begin(); step != steps->end(); ++step)
-        {
-            int ctb = step - steps->begin();
-            ofSetColor(255, ofMap(step->vel, 0, 15, 255, 0), 0);
-            ofFill();
-            int y = 100+(ctb*3);
-            ofRect(x, y, ofMap(step->vel, 0, 15, 0, w), 2);
-        }
+    // draw grid
+    for(int i = 0; i < 128; ++i)
+    {
+       if(i%16 == 0)
+       {
+           ofSetColor(96, 96, 96);
+       }
+       else if (i%4 == 0)
+       {
+           ofSetColor(64, 64, 64);
+       }
+       else
+       {
+           ofSetColor(48, 48, 48);
+       }
+       ofFill();
+       int y = 100+(i*4);
+       ofRect(x, y, w, 3);
+    }
+    // draw steps
+    vector<Trak> * tracks = m_ancient.get_tracks();
+    vector<Step> * steps;
+    steps = tracks->at(track).get_current();
+    std::vector<Step>::iterator step;
+    for(step = steps->begin(); step != steps->end(); ++step)
+    {
+        int ctb = step - steps->begin();
+        ofSetColor(255, ofMap(step->vel, 0, 15, 255, 0), 0);
+        ofFill();
+        int y = 100+((ctb*4));
+        ofRect(x, y, ofMap(step->vel, 0, 15, 0, w), 3);
+    }
            
 }
 //--------------------------------------------------------------

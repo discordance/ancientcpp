@@ -110,8 +110,23 @@ vector<int> Gaia::euclidian_variation(vector<Step> *phr, float thres)
 {
     int generation = 0;
     vector<int> target = Gaia::steps_to_vel(phr);
-    
-    
+}
+
+void Gaia::upper_compressor(vector<int> *phr)
+{
+    vector<int>::iterator vel;
+    for(vel = phr->begin(); vel != phr->end(); ++vel)
+    {
+        //int ct = vel - phr->begin();
+        if(Gaia::get_vel_group(*vel) > 2)
+        {
+            *vel = 15;
+        }
+        if(Gaia::get_vel_group(*vel) < 1)
+        {
+            *vel = 0;
+        }
+    }
 }
 
 vector<int> Gaia::gauss_variation(vector<Step> *phr, float thres)
@@ -217,14 +232,13 @@ vector<int> Gaia::generate_cyclic_phr(int size, int bdiv, int cycle, int offset)
 
 vector< vector<int> > Gaia::ga(int size, float den, float rpv, float syn, float rep)
 {
-    //ofLog(OF_LOG_NOTICE, ofToString(den) + " " + ofToString(rpv) + " " + ofToString(syn) + " " + ofToString(rep) + " <<<<");
+    //ofLog(OF_LOG_NOTICE,"stats "+ ofToString(den) + " " + ofToString(rpv) + " " + ofToString(syn) + " " + ofToString(rep) + " <<<<");
     int total_gen = 8;
     int gen_num = total_gen;
-    vector< vector<int> > pool = Gaia::generate_stochastic(size, 128, den); // get some randoms
-    vector< vector<int> > cyclic_pool = Gaia::generate_cyclic(size, 128); // get cyclic randoms
+    vector< vector<int> > pool = Gaia::generate_stochastic(size, GA_POPULATION/2, den); // get some randoms
+    vector< vector<int> > cyclic_pool = Gaia::generate_cyclic(size, GA_POPULATION/2); // get cyclic randoms
     pool.insert(pool.end(), cyclic_pool.begin(), cyclic_pool.end()); // merge them
     std::map<float, vector<int> > generation;
-    int pop_size = pool.size();
     
     // first generation initiated.
     while(gen_num > 0)
@@ -236,7 +250,7 @@ vector< vector<int> > Gaia::ga(int size, float den, float rpv, float syn, float 
             float fit = Gaia::fitness_score(*phr,den,rpv,syn,rep);
             generation[fit] = *phr;
         }
-        
+        //ofLog(OF_LOG_NOTICE,"generation " + ofToString(gen_num) + " size "+ ofToString(generation.size()));
         pool.clear(); // clear pool and re-use;
         std::map<float, vector<int> >::iterator gen;
         int group = 0;
@@ -264,10 +278,17 @@ vector< vector<int> > Gaia::ga(int size, float den, float rpv, float syn, float 
                     pool.push_back(Gaia::generate_stochastic_phr(size, den));
                     break;
             }
-            int modul = (int)floor(generation.size()/4.);
-            if(ct % modul == 0 && modul)
+            if(generation.size() >= 5)
             {
-                ++group;
+                int modul = (int)floor(generation.size()/4.);
+                if(ct % modul == 0 && modul)
+                {
+                    ++group;
+                }
+            }
+            else
+            {
+                gen_num = 0;
             }
         }
         
@@ -278,7 +299,7 @@ vector< vector<int> > Gaia::ga(int size, float den, float rpv, float syn, float 
     
     // re-ordering
     std::map<float, vector<int> >::iterator gen;
-    ofLog(OF_LOG_NOTICE, "winner:"+ofToString(generation.begin()->first));
+    ofLog(OF_LOG_NOTICE, "winner: "+ofToString(generation.begin()->first));
     vector<int> winner = generation.begin()->second;
     map<float, vector<int> > euclidian_ordered;
     for(gen = generation.begin(); gen != generation.end(); ++gen)
@@ -334,12 +355,21 @@ float Gaia::fitness_score(vector<int>& phr, float den, float rpv, float syn, flo
 {
     float den_dist, rpv_dist, syn_dist, rep_dist = 0.;
     den_dist = abs(Gaia::get_density(phr)-den);
-    rpv_dist = abs(Gaia::get_repetitiveness(phr)-rpv);
+    //rpv_dist = abs(Gaia::get_repetitiveness(phr)-rpv);
     syn_dist = abs(Gaia::get_syncopation(phr)-syn);
     rep_dist = abs(Gaia::get_repartition(phr)-rep);
-    return (den_dist+rpv_dist+syn_dist+rep_dist)/4;
+    return (den_dist
+            +rpv_dist
+            +syn_dist
+            +rep_dist
+            )/4;
 }
 
+/**
+ *   Why Not replacing this shit by a more euclidian shite
+ *
+ */
+ 
 vector< vector<int> > Gaia::generate_cyclic(int size, int sample_size)
 {
     int bdiv = 0;
@@ -349,6 +379,7 @@ vector< vector<int> > Gaia::generate_cyclic(int size, int sample_size)
     while (pool.size() < sample_size)
     {
         vector<int> phr = Gaia::generate_cyclic_phr(size, bdiv, cycle, offset);
+        Gaia::upper_compressor(&phr);
         pool.push_back(phr);
         
         if(pool.size() % 2 == 0)
@@ -375,6 +406,7 @@ vector< vector<int> > Gaia::generate_stochastic(int size, int sample_size, float
         vector<int> phr = Gaia::generate_stochastic_phr(size, den);
         if(accumulate(phr.begin(),phr.end(),0))
         {
+            Gaia::upper_compressor(&phr);
             pool.push_back(phr);
         }
         
@@ -703,10 +735,7 @@ float Gaia::get_repetitiveness(vector<int>& phr)
         {
             scores.push_back(Gaia::euclidian_distance(part, prev_part));
         }
-        //else
-        //{
-           prev_part = part; 
-        //}
+        prev_part = part; 
     }
     
     float avg_score = 0.;
@@ -800,6 +829,7 @@ map<int, vector<float> > Gaia::create_type_stats()
         vector<float> stats;
         float vrate = 0.;
         float den = 0.;
+        float den_dev = 0.;
         switch (i) {
             case MODE_LOW_PERC:
                 vrate = 0.15;

@@ -33,12 +33,19 @@ class Gaia {
         static const int MODE_OVERHEAD = 4;
         static const int MODE_ONE_SHOT = 5;
         
+        // GA
+        static const int GA_POPULATION = 1024;
+        
         // lookup tables
         static std::map<int, vector<int> > syncopation_weights;
         static std::map<int, int> syncopation_maxes;
         static std::map<int, vector<float> > type_stats;
         
         /**** utilities ****/
+    
+        // compressor
+        static void upper_compressor(vector<int> *vels);
+        
         // dump
         static void dump_vel(vector<Step> *phr);
         // converters

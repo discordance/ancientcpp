@@ -70,6 +70,22 @@ void Trak::set_vanilla(vector<Step> phr)
     update_current();
 }
 
+void Trak::set_matrix(vector< vector < vector<Step> > > matrix)
+{
+    m_matrix = matrix;
+    m_vanilla = &m_matrix.at(2).at(0);
+    set_size(m_vanilla->size());
+    update_groove();
+    update_current();
+}
+
+void Trak::set_level_variat(int level, int variat)
+{
+    m_level = level;
+    m_variat = variat;
+    update_current();
+}
+
 void Trak::set_pitch(int pitch)
 {
     m_pitch = pitch;
@@ -148,8 +164,19 @@ void Trak::set_euclidian_variation(float thres)
     }
     if(thres > 0.)
     {
-        
-    }    
+        vector<int> vari = Gaia::euclidian_variation(&*m_vanilla, thres);
+        vector<int>::iterator vel;
+        // iterate
+        for(vel = vari.begin(); vel != vari.end(); ++vel)
+        {
+            Step *step = &m_current.at(vel - vari.begin());
+            step->vel = *vel;
+        }
+    }
+    else
+    {
+        update_current();
+    }
 }
 
 void Trak::set_jaccard_variation(float thres)

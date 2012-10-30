@@ -16,6 +16,8 @@ Ancient::Ancient()
     m_xor_mode = false;
     m_jacc_variation = 0;
     m_processing = false;
+    m_level = 2;
+    m_variat = 0;
     
     // init eight tracks
     for(int i = 0; i < 8 ; i++)
@@ -118,6 +120,14 @@ void Ancient::set_groove(vector<float> groove)
     startThread();
 }
 
+void Ancient::set_level_variat(int level, int variat)
+{
+    m_level = level;
+    m_variat = variat;
+    m_tasks.push_back("evolve");
+    startThread();
+}
+
 void Ancient::set_seq(Seq *seq)
 {
     m_seq = seq;
@@ -179,6 +189,10 @@ void Ancient::threadedFunction()
                     {
                         track->set_beat_groove(m_groove);
                     }
+                    else if(task == "evolve")
+                    {
+                        track->set_level_variat(m_level, m_variat);
+                    }
                 }
             }
   
@@ -193,9 +207,29 @@ void Ancient::threadedFunction()
                 float syn = gas.at(3);
                 float rep = gas.at(4);
                 m_ga_tasks.erase(m_ga_tasks.begin());
+                /*
                 vector< vector<int> > res = Gaia::ga(size, den, rpv, syn, rep);
                 m_tracks[track].set_vanilla(Gaia::vel_to_phr(*res.begin()));
-                
+                */
+                // create the matrix
+                vector< vector < vector<Step> > > matrix;
+                for(int i = 0; i < 5; ++i)
+                {
+                    float curr_den = ofMap(i, 0, 4, ofClamp(den-0.2, 0.05, 1.), ofClamp(den+0.2, 0.05, 1.));
+                    if(i == 2)
+                    {
+                        curr_den = den;
+                    }
+                    vector< vector<int> > res = Gaia::ga(size, curr_den, rpv, syn, rep);
+                    vector < vector<Step> > level_line;
+                    vector< vector<int> >::iterator res_vel;
+                    for(res_vel = res.begin(); res_vel != res.end(); ++res_vel)
+                    {
+                        level_line.push_back(Gaia::vel_to_phr(*res_vel));
+                    }
+                    matrix.push_back(level_line);
+                }
+                m_tracks[track].set_matrix(matrix);
             }
             unlock();
         }

@@ -61,6 +61,11 @@ class testApp : public ofBaseApp{
         float m_rpv;
         float m_syn;
         float m_rep;
+    
+        // evolution
+        int m_level;
+        int m_variation;
+    
         map<string, bool> m_trigg;
     
         //ui

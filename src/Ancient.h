@@ -22,6 +22,7 @@ class Ancient : public ofThread
     public:
         Ancient();
         void set_seq(Seq *seq);
+        void set_level_variat(int level, int variat);
         void set_swing(float swg);
         void set_groove(vector<float> groove);
         void set_xor_variation(float ratio);
@@ -45,7 +46,8 @@ class Ancient : public ofThread
         float m_xor_variation;
         bool  m_xor_mode;
         float m_jacc_variation;
-
+        float m_level;
+        float m_variat;
         
         // queue handling
         vector<string> m_tasks;

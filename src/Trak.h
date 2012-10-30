@@ -16,11 +16,13 @@ using namespace std;
 
 class Trak {
     public:
-        Trak(int mode = 0, int size = 32);
+        Trak(int mode = 0, int size = 16);
         
         // accessors
         void set_vanilla(vector<Step> phr);
         void set_vanilla(vector<Step> phr, int mode);
+        void set_matrix(vector< vector < vector<Step> > > matrix);
+        void set_level_variat(int level, int variat);
         bool has_events();
         
         // current accessors

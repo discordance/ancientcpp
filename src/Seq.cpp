@@ -78,9 +78,6 @@ void Seq::exit()
     m_virtual_midiOut.closePort();
 }
 
-
-// todo -> groove management is not clean
-// todo -> ghost note probz ???
 void Seq::update_drum_tracks(vector<Trak> *tracks) // v1, replace all
 {
     /***********************************************
@@ -117,7 +114,6 @@ void Seq::update_drum_tracks(vector<Trak> *tracks) // v1, replace all
                     int drift = mult*(1+cstep.drift) - mult;
                     cstick += drift;
                     int cetick = cstick + t_dur;
-                    //cetick += drift;
                     int vel = ofMap(cstep.vel, 0, 15, 0, 127);
                     evt.push_back(cstick);
                     evt.push_back(cetick);
@@ -135,87 +131,32 @@ void Seq::update_drum_tracks(vector<Trak> *tracks) // v1, replace all
         }
         unlock();
     }
-    /***********************************************
-     * V1
-     *
-     ***/
-    /*
-    if(lock())
-    {
-        reset_events();
-        // update tracks
-        // iterator
-        std::vector<Trak>::iterator track;
-        for(track = tracks->begin(); track != tracks->end(); ++track) 
-        {
-            // track num
-            int tr_num = track - tracks->begin();
-            
-            // get current
-            vector<Step>* current = track->get_current();
-            int ps = current->size(); // phrase size
-            for(int i = 0; i < m_max_steps; ++i)
-            {
-                int modi=i%ps;
-                Step cstep = current->at(modi);
-
-                if(cstep.vel)
-                {
-                    int mult = m_max_ticks/m_max_steps; // multiplier to map from 128 to max in res
-                    int cstick = i * mult; // current start tick 
-                    int drift = mult*(1+cstep.drift) - mult;
-                    cstick += drift;
-                    int cetick = cstick + ( (cstep.dur*mult) - drift );
-                    cetick = (cetick >= m_max_ticks) ? m_max_ticks - 1: cetick; // secure the last dur
-                    int vel = ofMap(cstep.vel, 0, 15, 0, 127);
-                    
-                    Evt on;
-                    on.track = tr_num;
-                    on.status = 1; // note on on channel 10
-                    on.channel = 10;
-                    on.pitch = track->get_pitch();
-                    on.vel = vel;
-                    
-                    Evt off;
-                    off.track = tr_num;
-                    off.status = 0; // note off on channel 10
-                    off.channel = 10;
-                    off.pitch = track->get_pitch();
-                    off.vel = vel;
-                    
-                    vector<Evt>* event_line_on = &m_events.at(cstick);
-                    event_line_on->push_back(on);
-                    vector<Evt>* event_line_off = &m_events.at(cetick);
-                    event_line_off->push_back(off);
-                }
-                
-            }
-        }
-        unlock();
-    } 
-    */
 }
 
 //--------------------------------------------------------------
 
 void Seq::correct_and_update(map<int, vector<int> >& evt_map, int track, int pitch)
 {
-    ofLog(OF_LOG_NOTICE, "start correct");
     vector<int> *n_p = NULL;
     vector<int> *n_c = NULL;
     map<int, vector<int> >::iterator curr;
     map<int, vector<int> >::iterator last = evt_map.end();
-    --last;
+    --last; // get the last
+
     for(curr = evt_map.begin(); curr != evt_map.end(); curr++)
     {
         n_c = &curr->second;
+        // correct under 0
+        if(n_c->size() && n_c->at(0) < 0)
+        {
+            n_c->at(0) = 0;
+        }
         int key = curr->first;
-  
         if(curr != evt_map.begin() && (&evt_map.at(key-1))->size())
         {
             n_p = &evt_map.at(key-1);
         };
-
+        
         if(n_p != NULL)
         {
             if(n_c->size())
@@ -243,7 +184,6 @@ void Seq::correct_and_update(map<int, vector<int> >& evt_map, int track, int pit
             }
         }
     }
-    ofLog(OF_LOG_NOTICE, "end correct");
 }
 
 void Seq::reset_events()
@@ -262,7 +202,8 @@ void Seq::reset_events()
     
 }
 
-void Seq::newMidiMessage(ofxMidiMessage& msg) {
+void Seq::newMidiMessage(ofxMidiMessage& msg)
+{
     
     if( (m_ticks+m_midi_delay) % (m_resolution*4) == 0 )
     {
@@ -311,8 +252,6 @@ void Seq::newMidiMessage(ofxMidiMessage& msg) {
             }
             
         }
-        
-        //ofLog(OF_LOG_NOTICE, ofToString(msg.status) + " ticks: " + ofToString(m_ticks) + " BPM: " + ofToString(m_bpm));
         unlock();
     }
 }
@@ -331,13 +270,6 @@ void Seq::kill_events(int chan, int pitch)
 
 void Seq::add_event(int start, int end, int track, int pitch, int vel)
 {
-    /*
-    if(!track)
-    {
-        ofLog(OF_LOG_NOTICE, ofToString(start)+" "+ofToString(end));
-    }
-     */
-    
     Evt on;
     on.track = track;
     on.status = 1; // note on on channel 10

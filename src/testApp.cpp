@@ -27,6 +27,7 @@ void testApp::setup()
     m_rpv = 0.9;
     m_syn = 0.1;
     m_rep = 0.5;
+    m_gen_size = 16;
     
     // variation
     m_level = 2;
@@ -92,6 +93,20 @@ void testApp::setup()
     w->setColorBack(ofColor(128,128,128,128));
     w = gui_d->addWidgetDown(new ofxUISlider(length-xInit,dim*2, 0., 1., m_rep, "rep"));
     w->setColorBack(ofColor(128,128,128,128));
+    w = gui_d->addWidgetDown(new ofxUISlider(length-xInit,dim*2, 4., 128., m_gen_size, "gen_size"));
+    w->setColorBack(ofColor(128,128,128,128));
+    /*
+    gui_d->addWidgetDown(new ofxUILabel("GROOVE ..........................", OFX_UI_FONT_MEDIUM));
+    gui_d->addWidgetDown(new ofxUISpacer(length-xInit, 1));
+    w = gui_d->addWidgetDown(new ofxUISlider(dim*3, dim*8, -0.99, 0.99, m_view_groove.at(0), "g0"));
+    w->setColorBack(ofColor(255,128,0,128));
+    w = gui_d->addWidgetRight(new ofxUISlider(dim*3, dim*8, -0.99, 0.99, m_view_groove.at(1), "g1"));
+    w->setColorBack(ofColor(255,128,0,128));
+    w = gui_d->addWidgetRight(new ofxUISlider(dim*3, dim*8, -0.99, 0.99, m_view_groove.at(2), "g2"));
+    w->setColorBack(ofColor(255,128,0,128));
+    w = gui_d->addWidgetRight(new ofxUISlider(dim*3, dim*8, -0.99, 0.99, m_view_groove.at(3), "g3"));
+    w->setColorBack(ofColor(255,128,0,128));
+    */
     
     gui_d->addWidgetDown(new ofxUILabel("EVOLVE .........................", OFX_UI_FONT_MEDIUM));
     gui_d->addWidgetDown(new ofxUISpacer(length-xInit, 1));
@@ -254,6 +269,16 @@ void testApp::gui_gEvent(ofxUIEventArgs &e)
         ofxUISlider *slider = (ofxUISlider *) e.widget;
         m_rep = slider->getScaledValue();
     }
+    else if(name == "gen_size")
+    {
+        ofxUISlider *slider = (ofxUISlider *) e.widget;
+        m_gen_size = (int) slider->getScaledValue();
+        if(m_gen_size % 2 != 0)
+        {
+            m_gen_size = floor(m_gen_size + (m_gen_size % 2));
+        }
+    }
+    
     // evolve
     else if(name == "level")
     {
@@ -281,7 +306,7 @@ void testApp::gui_gEvent(ofxUIEventArgs &e)
             ss << *name.rbegin();
             ss >> s;
             tr = ofToInt(s);
-            m_ancient.ga(tr, m_den, m_rpv, m_syn, m_rep);
+            m_ancient.ga(tr, m_gen_size, m_den, m_rpv, m_syn, m_rep);
         }
         else if(res == "mt")
         {

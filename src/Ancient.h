@@ -34,7 +34,7 @@ class Ancient : public ofThread
         void assign_typemap(vector<int> typemap);
         void notify_bar(); // be informed that a bar is going on
         vector<Trak>* get_tracks();
-        void ga(int track, float den, float rpv, float syn, float rep);
+        void ga(int track, int size, float den, float rpv, float syn, float rep);
         
         bool m_auto_variation;
     

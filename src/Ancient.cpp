@@ -27,14 +27,15 @@ Ancient::Ancient()
     }
     
     // pitch map stuff
-    static const int parr[] = {36,// kick
+    static const int parr[] = {
+                              36,// kick
                               38,// snare1
                               40,// snare2
                               42,// chh
                               46,// ohh
                               47,// perc3   
                               48,// perc2
-                              49 // crash
+                              49 // os
                               };
     vector<int> pitchmap (parr, parr + sizeof(parr) / sizeof(parr[0]) );
     assign_pitchmap(pitchmap);
@@ -48,10 +49,15 @@ Ancient::Ancient()
         Gaia::MODE_OVERHEAD,// ohh
         Gaia::MODE_PERC,// perc3
         Gaia::MODE_PERC,// perc2
-        Gaia::MODE_ONE_SHOT // crash
+        Gaia::MODE_ONE_SHOT // os
     };
     vector<int> typemap (tarr, tarr + sizeof(tarr) / sizeof(tarr[0]) );
     assign_typemap(typemap);
+    
+    vector<int> test = Gaia::permutation(16, 0.25, 0.5, 0.5, 0.5, 13);
+    ofLog(OF_LOG_NOTICE, "teust "+ofToString(Gaia::vel_to_str(test)));
+    ofLog(OF_LOG_NOTICE, "teust2 "+ofToString(Gaia::get_density(test)));
+    Gaia::get_all_permutations(test);
 }
 
 vector<Trak>* Ancient::get_tracks()
@@ -82,10 +88,10 @@ void Ancient::notify_bar()
     }
 }
 
-void Ancient::ga(int track, float den, float rpv, float syn, float rep)
+void Ancient::ga(int track, int size, float den, float rpv, float syn, float rep)
 {
     // get size
-    int size = m_tracks.at(track).get_size();
+    //int size = m_tracks.at(track).get_size();
     vector<float> stats;
     stats.push_back((float)size);
     stats.push_back(den);
@@ -229,6 +235,7 @@ void Ancient::threadedFunction()
             {
                 vector<float> gas = m_ga_tasks.begin()->second;
                 int track = m_ga_tasks.begin()->first;
+                
                 int size = (int)gas.at(0);
                 float den = gas.at(1);
                 float rpv = gas.at(2);
@@ -236,23 +243,42 @@ void Ancient::threadedFunction()
                 float rep = gas.at(4);
                 m_ga_tasks.erase(m_ga_tasks.begin());
                 int mode = m_tracks[track].m_mode;
+                
                 // create the matrix
                 vector< vector < vector<Step> > > matrix;
+                vector<int> vanilla;
                 for(int i = 0; i < 5; ++i)
                 {
+                    vector < vector<Step> > level_line;
                     float curr_den = ofMap(i, 0, 4, ofClamp(den-Gaia::type_stats.at(mode).at(2), 0.05, 1.), ofClamp(den+Gaia::type_stats.at(mode).at(2), 0.05, 1.));
+
                     if(i == 2)
                     {
                         curr_den = den;
                     }
-                    vector< vector<int> > res = Gaia::ga(size, curr_den, rpv, syn, rep);
-                    vector < vector<Step> > level_line;
-                    vector< vector<int> >::iterator res_vel;
-                    for(res_vel = res.begin(); res_vel != res.end(); ++res_vel)
+                    vector<int> res = Gaia::ga(size, curr_den, rpv, syn, rep);
+                    if(i == 2)
                     {
-                        level_line.push_back(Gaia::vel_to_phr(*res_vel));
+                        vanilla = res;
                     }
-                    matrix.push_back(level_line);
+                    if(i > 2)
+                    {
+                        // mixing
+                        Gaia::compand_phr(vanilla,res);
+                    }
+                    // generate variations
+                    
+                    float jacc_thres = 0.97;
+                    vector<Step> res_phr = Gaia::vel_to_phr(res);
+                    level_line.push_back(res_phr); // push the result
+                    for(int j = 0; j < 4; ++j)
+                    {
+                        vector<int> jaccarded = Gaia::jaccard_variation(&res_phr, jacc_thres);
+                        level_line.push_back(Gaia::vel_to_phr(jaccarded));
+                        jacc_thres += 0.005;
+                    }
+                   
+                    matrix.push_back(level_line); 
                 }
                 m_tracks[track].set_matrix(matrix);
             }

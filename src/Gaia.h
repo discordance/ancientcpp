@@ -58,6 +58,9 @@ class Gaia {
         static vector<int> steps_to_vel(vector<Step> *phr);
         static vector<int> bytes_to_ints(vector<unsigned char> bytes);
         
+        // tools
+        static void compand_phr(vector<int>& model, vector<int>& target);
+        
         // swing
         static void swing_phr(vector<Step> *phr, float swing);
         static void beat_groove_phr(vector<Step> *phr, vector<float> drifts);
@@ -72,7 +75,8 @@ class Gaia {
         inline static vector<int> generate_stochastic_phr(int size, float den);
         inline static vector< vector<int> > generate_stochastic(int size, int sample_size, float den);
         inline static vector< vector<int> > generate_cyclic(int size, int sample_size);
-        static vector< vector<int> > ga(int size, float den, float rpv, float syn, float rep);
+        static vector<int> ga(int size, float den, float rpv, float syn, float rep);
+        static vector<int> permutation(int size, float den, float rpv, float syn, float rep, float thes);
         
         // weigthed jaccard
         static float wjacc(vector<int>& s1, vector<int>& s2);
@@ -105,7 +109,15 @@ class Gaia {
         // utils GA
         inline static float fitness_score(vector<int>& phr, float den, float rpv, float syn, float rep);
         inline static vector <int> mutate_phr(vector <int>& va, vector <int>& vb);
+        
+        // utils permutation
+        
+        static vector< vector<int> > get_all_permutations(vector<int> target);
     
+        // basic tools
+        static vector<int> get_empty_vels(int size);
+        static bool has_events(vector<int>& target);
+        
 };
 
 

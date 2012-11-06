@@ -110,6 +110,34 @@ vector<int> Gaia::euclidian_variation(vector<Step> *phr, float thres)
 {
     int generation = 0;
     vector<int> target = Gaia::steps_to_vel(phr);
+    int inc = 4;
+    vector<int> goal;
+    for(int i = 0; i < target.size(); i += inc)
+    {
+        int to = (inc > target.size()-i)? target.size()-i : inc;
+        to += i;
+        vector<int>::const_iterator beg = target.begin() + i;
+        vector<int>::const_iterator end = beg + (to-i);
+        vector<int> part(beg,end);
+        vector<int> res;
+        float score = 1;
+        int stedv = 15;
+        vector<int> rnd;
+        while (score > thres) {
+            
+            for(int j = i; j < to; ++j)
+            {
+                rnd.push_back(ofClamp(Gaia::normal(target.at(j),stedv),0,15));
+            }
+            res = rnd;
+            score = Gaia::euclidian_distance(rnd, part);
+            rnd.clear();
+            stedv -= 0.1;
+        }
+        goal.insert(goal.end(), res.begin(), res.end());
+    }
+    Gaia::upper_compressor(&goal);
+    return goal;
 }
 
 void Gaia::upper_compressor(vector<int> *phr)
@@ -120,7 +148,7 @@ void Gaia::upper_compressor(vector<int> *phr)
         //int ct = vel - phr->begin();
         if(Gaia::get_vel_group(*vel) > 2)
         {
-            *vel = 15;
+            *vel = 14;
         }
         if(Gaia::get_vel_group(*vel) < 1)
         {
@@ -182,6 +210,7 @@ vector<int> Gaia::jaccard_variation(vector<Step> *phr, float thres)
         }
         goal.insert(goal.end(), res.begin(), res.end());
     }
+    Gaia::upper_compressor(&goal);
     return goal;
 }
 
@@ -230,7 +259,31 @@ vector<int> Gaia::generate_cyclic_phr(int size, int bdiv, int cycle, int offset)
     return res;
 }
 
-vector< vector<int> > Gaia::ga(int size, float den, float rpv, float syn, float rep)
+vector<int> Gaia::permutation(int size, float den, float rpv, float syn, float rep, float thres = 13)
+{
+    // first, get the right density.
+    vector<int> base = Gaia::get_empty_vels(size);
+    if(!den) // security
+    {
+        return base;
+    }
+    
+    int cvel = 1;
+    int ct = 0;
+    while(ct < size-1 && Gaia::get_density(base) < den)
+    {
+        base.at(ct) = cvel;
+        cvel++;
+        if (cvel == thres)
+        {
+            ct++;
+            cvel = 1;
+        }
+    }
+    return base;
+}
+
+vector<int> Gaia::ga(int size, float den, float rpv, float syn, float rep)
 {
     //ofLog(OF_LOG_NOTICE,"stats "+ ofToString(den) + " " + ofToString(rpv) + " " + ofToString(syn) + " " + ofToString(rep) + " <<<<");
     int total_gen = 8;
@@ -297,36 +350,22 @@ vector< vector<int> > Gaia::ga(int size, float den, float rpv, float syn, float 
         gen_num--;
     }
     
-    // re-ordering
-    std::map<float, vector<int> >::iterator gen;
-    //ofLog(OF_LOG_NOTICE, "winner: "+ofToString(generation.begin()->first));
+    // generation of variations with jaccard
     vector<int> winner = generation.begin()->second;
-    map<float, vector<int> > euclidian_ordered;
-    for(gen = generation.begin(); gen != generation.end(); ++gen)
+    return winner;
+}
+
+void Gaia::compand_phr(vector<int>& model, vector<int>& target)
+{
+    vector<int>::iterator t_vel;
+    for(t_vel = target.begin(); t_vel != target.end(); ++t_vel)
     {
-        if(gen != generation.begin())
+        int ct = t_vel - target.begin();
+        if(model.at(ct) > *t_vel)
         {
-            euclidian_ordered[Gaia::euclidian_distance(winner, gen->second)] = gen->second;
+            *t_vel = model.at(ct);
         }
     }
-    vector< vector<int> > res;
-    res.push_back(winner);
-    //ofLog(OF_LOG_NOTICE, Gaia::vel_to_str(winner));
-    float thres = 0.05;
-    for(gen = euclidian_ordered.begin(); gen != euclidian_ordered.end(); ++gen)
-    {
-        if(gen->first > thres)
-        {
-            res.push_back(gen->second);
-            thres += 0.05;
-            if(thres >= 0.25)
-            {
-                break;
-            }
-        }
-    }
-    //ofLog(OF_LOG_NOTICE, ofToString(res.size()));
-    return res;
 }
 
 vector <int>  Gaia::mutate_phr(vector <int>& va, vector <int>& vb)
@@ -580,6 +619,28 @@ void Gaia::dump_vel(vector<Step> *phr)
     ofLog(OF_LOG_NOTICE, dumped);
 }
 
+vector< vector<int> > Gaia::get_all_permutations(vector<int> target)
+{
+    vector< vector<int> > res;
+    sort(target.begin(), target.end());
+    do
+    {
+        res.push_back(target);
+    }
+    while(std::next_permutation(target.begin(), target.end()));
+    ofLog(OF_LOG_NOTICE, "permutations : " + ofToString(res.size()));
+    return res;
+}
+
+vector<int> Gaia::get_empty_vels(int size)
+{
+    vector<int> res;
+    for (int i = 0; i < size; ++i)
+    {
+        res.push_back(0);
+    }
+    return res;
+}
 
 // heuristics tools
 //  
@@ -668,6 +729,12 @@ float Gaia::get_repartition(vector<int>& phr)
     vector<float> repartitions;
     for(group = groups.begin(); group != groups.end(); ++group)
     {
+        if(!Gaia::has_events(*group))
+        {
+            repartitions.push_back(0.5);
+            continue;
+        }
+        
         vector<int> active;
         float split = 0.;
         float numerator = 0.;
@@ -824,7 +891,7 @@ map <int,int> Gaia::create_maxes_map()
 map<int, vector<float> > Gaia::create_type_stats()
 {
     map<int, vector<float> > res;
-    for (int i = 0; i < 5; ++i)
+    for (int i = 0; i < 6; ++i)
     {
         vector<float> stats;
         float vrate = 0.;
@@ -834,7 +901,7 @@ map<int, vector<float> > Gaia::create_type_stats()
             case MODE_LOW_PERC:
                 vrate = 0.15;
                 den = 0.25;
-                den_dev = 0.05;
+                den_dev = 0.07;
                 break;
             case MODE_PERC:
                 vrate = 0.45;
@@ -844,17 +911,17 @@ map<int, vector<float> > Gaia::create_type_stats()
             case MODE_SNARE:
                 vrate = 0.35;
                 den = 0.125;
-                den_dev = 0.15;
+                den_dev = 0.12;
                 break;
             case MODE_HITHAT:
                 vrate = 0.65;
                 den = 0.25;
-                den_dev = 0.3;
+                den_dev = 0.22;
                 break;
             case MODE_OVERHEAD:
                 vrate = 0.65;
                 den = 0.5;
-                den_dev = 0.2;
+                den_dev = 0.22;
                 break;
             case MODE_ONE_SHOT:
                 vrate = 0.8;
@@ -874,6 +941,20 @@ map<int, vector<float> > Gaia::create_type_stats()
     }
     
     return res;
+}
+
+bool Gaia::has_events(vector<int>& target)
+{
+    vector<int>::iterator vel;
+    // iterate
+    for(vel = target.begin(); vel != target.end(); ++vel)
+    {
+        if(*vel)
+        {
+            return true;
+        }
+    }
+    return false;
 }
 
 vector<int> Gaia::get_syncopation_weights(int size)

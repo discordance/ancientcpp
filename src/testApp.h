@@ -62,6 +62,9 @@ class testApp : public ofBaseApp{
         float m_syn;
         float m_rep;
     
+        // gen size
+        int m_gen_size;
+    
         // evolution
         int m_level;
         int m_variation;

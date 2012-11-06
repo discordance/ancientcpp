@@ -187,7 +187,7 @@ void Trak::set_jaccard_variation(float thres)
     }
     if(thres > 0.)
     {
-        vector<int> vari = Gaia::jaccard_variation(&*m_vanilla, thres);
+        vector<int> vari = Gaia::jaccard_variation(&m_matrix.at(m_level).at(m_variat), thres);
         vector<int>::iterator vel;
         // iterate
         for(vel = vari.begin(); vel != vari.end(); ++vel)
